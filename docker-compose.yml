@@ -1,0 +1,43 @@
+# La password del database arriva da .env (copia di .env.example), mai scritta qui.
+services:
+  db:
+    image: postgres:18.6-bookworm
+    environment:
+      POSTGRES_DB: coworking
+      POSTGRES_USER: coworking
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:?manca POSTGRES_PASSWORD, copia .env.example in .env}"
+    ports:
+      # Solo dalla macchina locale, e non sulla 5432 spesso già occupata.
+      - "127.0.0.1:5433:5432"
+    volumes:
+      # Da PostgreSQL 18 il volume è la cartella padre dei dati, non più .../data.
+      - db-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U coworking -d coworking"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  api:
+    build: ./backend
+    environment:
+      ConnectionStrings__Default: "Host=db;Port=5432;Database=coworking;Username=coworking;Password=${POSTGRES_PASSWORD}"
+      TimeZone: "Europe/Rome"
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    build:
+      context: ./frontend
+      args:
+        API_URL: "http://api:8080"
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+
+volumes:
+  db-data:
