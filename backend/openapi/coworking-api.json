@@ -1,0 +1,50 @@
+{
+  "openapi": "3.1.1",
+  "info": {
+    "title": "Coworking.Api | v1",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/settings": {
+      "get": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Restituisce il fuso orario del coworking.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettingsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "SettingsResponse": {
+        "required": [
+          "timeZone"
+        ],
+        "type": "object",
+        "properties": {
+          "timeZone": {
+            "type": "string",
+            "description": "Fuso IANA in cui il frontend mostra tutti gli orari."
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Settings"
+    }
+  ]
+}
