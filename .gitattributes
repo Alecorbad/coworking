@@ -1,0 +1,2 @@
+# Fine riga LF ovunque: gli script eseguiti nei container Linux non tollerano CRLF.
+* text=auto eol=lf

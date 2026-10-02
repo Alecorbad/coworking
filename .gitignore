@@ -1,0 +1,19 @@
+# .NET
+bin/
+obj/
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+next-env.d.ts
+
+# Variabili locali (il modello è .env.example)
+.env
+
+# IDE e sistema
+.vs/
+.vscode/
+.idea/
+.DS_Store
