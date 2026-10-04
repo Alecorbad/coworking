@@ -4,12 +4,13 @@ using Coworking.Api.Features.Settings;
 
 namespace Coworking.Api.IntegrationTests.Features;
 
-public sealed class SettingsTests(ApiFactory factory) : IClassFixture<ApiFactory>
+[Collection(SharedApi.Name)]
+public sealed class SettingsTests(ApiFactory factory)
 {
     [Fact]
-    public async Task GetSettings_ReturnsCoworkingTimeZone()
+    public async Task GetSettings_ReturnsCoworkingTimeZone_WhenAuthenticated()
     {
-        var client = factory.CreateClient();
+        var client = await factory.CreateAuthenticatedClientAsync();
 
         var settings = await client.GetFromJsonAsync<SettingsResponse>(
             "/api/settings", TestContext.Current.CancellationToken);

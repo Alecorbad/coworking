@@ -2,7 +2,7 @@ namespace Coworking.Api.Common;
 
 /// <summary>
 /// Fuso orario del coworking: le regole sugli orari convertono gli istanti UTC
-/// nell'ora locale di questo fuso prima di confrontarli (D-8).
+/// nell'ora locale di questo fuso prima di confrontarli.
 /// </summary>
 public sealed class CoworkingTimeZone
 {

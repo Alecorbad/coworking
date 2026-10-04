@@ -23,6 +23,8 @@ services:
     environment:
       ConnectionStrings__Default: "Host=db;Port=5432;Database=coworking;Username=coworking;Password=${POSTGRES_PASSWORD}"
       TimeZone: "Europe/Rome"
+      # Password della receptionist creata al primo avvio: arriva da .env, mai scritta qui.
+      Receptionist__Password: "${RECEPTIONIST_PASSWORD:?manca RECEPTIONIST_PASSWORD, aggiungila a .env (vedi .env.example)}"
     ports:
       - "8080:8080"
     depends_on:
