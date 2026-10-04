@@ -5,7 +5,7 @@ export function getBrowserTimeZone(): string {
 
 /**
  * Vero quando il browser è in un fuso diverso da quello del coworking: gli orari
- * restano nel fuso del coworking e l'interfaccia lo segnala (D-16).
+ * restano nel fuso del coworking e l'interfaccia lo segnala.
  */
 export function differsFromCoworkingTimeZone(
   coworkingTimeZone: string,
