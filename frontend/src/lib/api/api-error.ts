@@ -37,5 +37,13 @@ export function toApiError(status: number, body: unknown): ApiError {
   return new ApiError(status, code, parseFieldErrors(problem.errors));
 }
 
+// Vero se il backend ha segnalato quel campo. Le chiavi arrivano col nome della proprietà C#
+// ("Name"), i campi del modulo hanno quello JSON ("name"): il confronto ignora le maiuscole.
+// Il testo inglese del backend non si mostra: il modulo ha il proprio aiuto in italiano.
+export function hasFieldError(error: unknown, field: string): boolean {
+  if (!(error instanceof ApiError)) return false;
+  return Object.keys(error.fieldErrors).some((key) => key.toLowerCase() === field.toLowerCase());
+}
+
 // Stato 0: la richiesta non è arrivata (rete assente, server spento).
 export const NETWORK_STATUS = 0;

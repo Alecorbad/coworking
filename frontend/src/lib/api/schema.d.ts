@@ -40,6 +40,446 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/rooms": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Elenca tutte le sale in ordine di nome, comprese quelle disattivate. */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["RoomResponse"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** Crea una sala, attiva. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreateRoomRequest"];
+                    "text/json": components["schemas"]["CreateRoomRequest"];
+                    "application/*+json": components["schemas"]["CreateRoomRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["RoomResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/rooms/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Legge una sala. */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["RoomResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        /** Modifica una sala, anche per disattivarla o riattivarla. */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateRoomRequest"];
+                    "text/json": components["schemas"]["UpdateRoomRequest"];
+                    "application/*+json": components["schemas"]["UpdateRoomRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["RoomResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        /** Cancella una sala senza prenotazioni; altrimenti va disattivata. */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/customers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Elenca i clienti in ordine di cognome e nome. */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CustomerResponse"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** Registra un cliente. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreateCustomerRequest"];
+                    "text/json": components["schemas"]["CreateCustomerRequest"];
+                    "application/*+json": components["schemas"]["CreateCustomerRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CustomerResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/customers/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Legge un cliente. */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CustomerResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        /** Modifica un cliente. */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateCustomerRequest"];
+                    "text/json": components["schemas"]["UpdateCustomerRequest"];
+                    "application/*+json": components["schemas"]["UpdateCustomerRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CustomerResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        /** Cancella un cliente senza prenotazioni. */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/login": {
         parameters: {
             query?: never;
@@ -192,6 +632,56 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        CreateCustomerRequest: {
+            /** @description Nome. */
+            firstName: string;
+            /** @description Cognome. */
+            lastName: string;
+            /** @description Unica senza distinguere maiuscole; si salva in minuscolo. */
+            email: string;
+        };
+        CreateRoomRequest: {
+            /** @description Nome mostrato nella griglia; unico senza distinguere maiuscole. */
+            name: string;
+            /**
+             * Format: int32
+             * @description Partecipanti massimi per prenotazione.
+             */
+            capacity: number;
+            /**
+             * Format: time
+             * @description Apertura, ora locale del coworking, a passi di mezz'ora.
+             */
+            openingTime: string;
+            /**
+             * Format: time
+             * @description Chiusura, dopo l'apertura, a passi di mezz'ora.
+             */
+            closingTime: string;
+        };
+        CustomerResponse: {
+            /**
+             * Format: int32
+             * @description Identificativo del cliente.
+             */
+            id: number;
+            /** @description Nome. */
+            firstName: string;
+            /** @description Cognome. */
+            lastName: string;
+            /** @description Email, in minuscolo. */
+            email: string;
+            /**
+             * Format: date-time
+             * @description Istante della registrazione, in UTC.
+             */
+            registeredAt: string;
+            /**
+             * Format: uint32
+             * @description Da rimandare nella modifica: rivela se un altro operatore ha salvato prima.
+             */
+            version: number;
+        };
         LoginRequest: {
             email: string;
             password: string;
@@ -204,13 +694,83 @@ export interface components {
             type?: null | string;
             title?: null | string;
             /** Format: int32 */
-            status?: null | number | string;
+            status?: null | number;
             detail?: null | string;
             instance?: null | string;
+        };
+        RoomResponse: {
+            /**
+             * Format: int32
+             * @description Identificativo della sala.
+             */
+            id: number;
+            /** @description Nome della sala. */
+            name: string;
+            /**
+             * Format: int32
+             * @description Partecipanti massimi per prenotazione.
+             */
+            capacity: number;
+            /**
+             * Format: time
+             * @description Apertura, ora locale del coworking.
+             */
+            openingTime: string;
+            /**
+             * Format: time
+             * @description Chiusura, ora locale del coworking.
+             */
+            closingTime: string;
+            /** @description false se la sala non accetta nuove prenotazioni. */
+            isActive: boolean;
+            /**
+             * Format: uint32
+             * @description Da rimandare nella modifica: rivela se un altro operatore ha salvato prima.
+             */
+            version: number;
         };
         SettingsResponse: {
             /** @description Fuso IANA in cui il frontend mostra tutti gli orari. */
             timeZone: string;
+        };
+        UpdateCustomerRequest: {
+            /** @description Nome. */
+            firstName: string;
+            /** @description Cognome. */
+            lastName: string;
+            /** @description Unica senza distinguere maiuscole; si salva in minuscolo. */
+            email: string;
+            /**
+             * Format: uint32
+             * @description La version letta insieme al cliente: se nel frattempo è cambiata, la modifica viene rifiutata.
+             */
+            version: number;
+        };
+        UpdateRoomRequest: {
+            /** @description Nome mostrato nella griglia; unico senza distinguere maiuscole. */
+            name: string;
+            /**
+             * Format: int32
+             * @description Partecipanti massimi per prenotazione.
+             */
+            capacity: number;
+            /**
+             * Format: time
+             * @description Apertura, ora locale del coworking, a passi di mezz'ora.
+             */
+            openingTime: string;
+            /**
+             * Format: time
+             * @description Chiusura, dopo l'apertura, a passi di mezz'ora.
+             */
+            closingTime: string;
+            /** @description false disattiva la sala: niente nuove prenotazioni, le esistenti restano. */
+            isActive: boolean;
+            /**
+             * Format: uint32
+             * @description La version letta insieme alla sala: se nel frattempo è cambiata, la modifica viene rifiutata.
+             */
+            version: number;
         };
     };
     responses: never;

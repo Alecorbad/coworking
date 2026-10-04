@@ -1,0 +1,122 @@
+// Ruolo:   modulo della sala, per crearla o modificarla (anche disattivarla)
+// Riceve:  la sala da modificare, oppure nessuna per crearne una
+// Produce: la richiesta all'API; si chiude da sola quando il salvataggio riesce
+// Regola:  la modifica rimanda la version letta all'apertura: se un altro operatore ha salvato
+//          nel frattempo, l'API risponde 409 e il modulo resta aperto con i dati inseriti
+// Vedi:    features/rooms/api.ts, features/rooms/room-form.ts
+
+"use client";
+
+import type { FormEvent } from "react";
+import Alert from "@mui/material/Alert";
+import Button from "@mui/material/Button";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import MenuItem from "@mui/material/MenuItem";
+import Stack from "@mui/material/Stack";
+import Switch from "@mui/material/Switch";
+import TextField from "@mui/material/TextField";
+import { hasFieldError } from "@/lib/api/api-error";
+import { errorMessage } from "@/lib/error-messages";
+import { formatTime, halfHourSlots } from "@/lib/format";
+import { type Room, useCreateRoom, useUpdateRoom } from "./api";
+import { readRoomForm } from "./room-form";
+
+const slots = halfHourSlots();
+
+export function RoomDialog({ room, onClose }: { room?: Room; onClose: () => void }) {
+  const create = useCreateRoom();
+  const update = useUpdateRoom(room?.id ?? 0);
+  const save = room ? update : create;
+
+  const onSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const { isActive, ...values } = readRoomForm(new FormData(event.currentTarget));
+    if (room) update.mutate({ ...values, isActive, version: room.version }, { onSuccess: onClose });
+    else create.mutate(values, { onSuccess: onClose });
+  };
+
+  const invalid = (field: string) => hasFieldError(save.error, field);
+
+  return (
+    <Dialog open onClose={onClose} fullWidth maxWidth="xs">
+      <form onSubmit={onSubmit}>
+        <DialogTitle>{room ? "Modifica sala" : "Nuova sala"}</DialogTitle>
+        <DialogContent>
+          <Stack spacing={4} sx={{ pt: 2 }}>
+            {save.isError && <Alert severity="error">{errorMessage(save.error)}</Alert>}
+            <TextField
+              name="name"
+              label="Nome"
+              defaultValue={room?.name}
+              required
+              autoFocus
+              error={invalid("name")}
+              helperText={
+                invalid("name") ? "Inserisci un nome di massimo 100 caratteri." : undefined
+              }
+              slotProps={{ htmlInput: { maxLength: 100 } }}
+            />
+            <TextField
+              name="capacity"
+              label="Capienza"
+              type="number"
+              defaultValue={room?.capacity ?? 4}
+              required
+              error={invalid("capacity")}
+              helperText={
+                invalid("capacity")
+                  ? "Da 1 a 500 persone."
+                  : "Partecipanti massimi per prenotazione."
+              }
+              slotProps={{ htmlInput: { min: 1, max: 500, step: 1 } }}
+            />
+            <Stack direction="row" spacing={4}>
+              <TextField
+                select
+                name="openingTime"
+                label="Apertura"
+                defaultValue={room ? formatTime(room.openingTime) : "09:00"}
+                required
+              >
+                {slots.map((slot) => (
+                  <MenuItem key={slot} value={slot}>
+                    {slot}
+                  </MenuItem>
+                ))}
+              </TextField>
+              <TextField
+                select
+                name="closingTime"
+                label="Chiusura"
+                defaultValue={room ? formatTime(room.closingTime) : "18:00"}
+                required
+              >
+                {slots.map((slot) => (
+                  <MenuItem key={slot} value={slot}>
+                    {slot}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Stack>
+            {room && (
+              <FormControlLabel
+                control={<Switch name="isActive" defaultChecked={room.isActive} />}
+                label="Attiva: accetta nuove prenotazioni"
+              />
+            )}
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={onClose}>Annulla</Button>
+          <Button type="submit" variant="contained" disabled={save.isPending}>
+            Salva
+          </Button>
+        </DialogActions>
+      </form>
+    </Dialog>
+  );
+}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ApiError, NETWORK_STATUS, toApiError } from "@/lib/api/api-error";
+import { ApiError, NETWORK_STATUS, hasFieldError, toApiError } from "@/lib/api/api-error";
 import { errorMessage } from "./error-messages";
 
 describe("errorMessage", () => {
@@ -48,5 +48,15 @@ describe("toApiError", () => {
       code: undefined,
     });
     expect(toApiError(500, undefined).fieldErrors).toEqual({});
+  });
+});
+
+describe("hasFieldError", () => {
+  it("riconosce il campo del modulo nella chiave C# del backend", () => {
+    const error = new ApiError(400, "VALIDATION_FAILED", { Name: ["The Name field is required."] });
+
+    expect(hasFieldError(error, "name")).toBe(true);
+    expect(hasFieldError(error, "capacity")).toBe(false);
+    expect(hasFieldError(new Error("boom"), "name")).toBe(false);
   });
 });

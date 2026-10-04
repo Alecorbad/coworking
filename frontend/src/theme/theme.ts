@@ -167,6 +167,28 @@ export const theme = createTheme(
         defaultProps: { variant: "outlined" },
         styleOverrides: { root: { fontSize: rem(fontSize.body), alignItems: "center" } },
       },
+      // Nell'app le etichette segnano uno stato «spento» (sala disattivata): bordo tratteggiato,
+      // e il testo dice lo stato, così non dipende dal colore.
+      MuiChip: {
+        defaultProps: { size: "small", variant: "outlined" },
+        styleOverrides: {
+          root: { fontSize: rem(fontSize.label) },
+          outlined: { borderStyle: "dashed" },
+        },
+      },
+      MuiTableCell: {
+        styleOverrides: {
+          head: ({ theme: t }) => ({
+            fontWeight: fontWeight.medium,
+            color: t.vars.palette.text.secondary,
+          }),
+        },
+      },
+      MuiDialogTitle: {
+        styleOverrides: {
+          root: { fontSize: rem(fontSize.sectionTitle), fontWeight: fontWeight.semibold },
+        },
+      },
       MuiSkeleton: { defaultProps: { animation: false } },
       MuiLink: { defaultProps: { underline: "hover" } },
     },

@@ -12,6 +12,13 @@ const messagesByCode: Record<string, string> = {
   UNAUTHENTICATED: "La sessione è scaduta. Accedi di nuovo.",
   FORBIDDEN: "Non hai i permessi per questa operazione.",
   NOT_FOUND: "L'elemento richiesto non esiste più.",
+  CONCURRENT_UPDATE:
+    "Modificato da un altro operatore: ricarica per vedere la versione aggiornata.",
+  ROOM_NAME_TAKEN: "Esiste già una sala con questo nome.",
+  INVALID_OPENING_HOURS:
+    "Orari non validi: la chiusura deve venire dopo l'apertura, a passi di mezz'ora.",
+  EMAIL_TAKEN: "Esiste già un cliente con questa email.",
+  HAS_BOOKINGS: "Ha delle prenotazioni e non si può eliminare. Una sala si può invece disattivare.",
   INTERNAL_ERROR: "Qualcosa è andato storto sul server. Riprova tra poco.",
 };
 
