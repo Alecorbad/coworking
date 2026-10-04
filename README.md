@@ -42,8 +42,8 @@ Clienti, sale e prenotazioni in un solo posto, senza sovrapposizioni.
 | Parte | Stato |
 |---|---|
 | Accesso della receptionist, gestione errori, struttura dell'interfaccia, tema chiaro e scuro | pronto |
-| Sale e clienti: elenco, modifica, disattivazione delle sale, modifiche concorrenti | pronto |
-| Prenotazioni e disponibilità | in arrivo |
+| Sale e clienti: elenco, modifica, disattivazione delle sale | pronto |
+| Prenotazioni e disponibilità: griglia, prenotazione, annullamento, regole | pronto |
 
 ---
 
@@ -64,11 +64,32 @@ docker compose up --build
 ```
 
 La prima build scarica le immagini di base e può richiedere qualche minuto.
+Nei log di `web` compare un collegamento per componente: applicazione, API (Scalar) e
+stato di API e database (health). Attendi `Ready` prima di aprire il frontend; senza
+accesso l'applicazione porta al login. Con `docker compose up -d`
+puoi rivedere il riepilogo usando `docker compose logs web`.
+
+Per avviare tutto **e aprire i collegamenti nel browser predefinito**, dopo aver copiato
+`.env.example` in `.env`, usa il comando del tuo sistema dalla cartella del progetto:
+
+| Sistema | Comando |
+|---|---|
+| macOS / Linux / WSL | `sh avvia.sh` (richiede `curl`) |
+| Windows PowerShell | `powershell -NoProfile -ExecutionPolicy Bypass -File .\avvia.ps1` |
+
+Gli script eseguono `docker compose up --build -d`, aspettano che login e health
+rispondano e chiedono al sistema di aprire tre URL, uno per componente (applicazione,
+Scalar, health), senza scegliere un browser. Schede o finestre dipendono dalle sue
+impostazioni. Il contratto OpenAPI si raggiunge da Scalar; PostgreSQL non ha una pagina
+web e il suo stato compare in health. Linux usa `xdg-open` o `gio`; senza una sessione grafica stampa solo
+i link. Il solo `docker compose up` mostra i link nei log: un container non può aprire
+il browser dell'host. I container restano in background; `docker compose stop` li ferma.
 
 | Servizio | Indirizzo |
 |---|---|
 | Applicazione | http://localhost:3000 |
 | API (documentazione interattiva Scalar) | http://localhost:8080/scalar |
+| Contratto OpenAPI (JSON) | http://localhost:8080/openapi/v1.json |
 | Stato dell'API e del database | http://localhost:8080/health |
 | PostgreSQL | `127.0.0.1:5433`, database e utente `coworking`, password in `.env` |
 
@@ -83,8 +104,9 @@ credenziale reale. `.env` è ignorato da git.
 ### Accesso
 
 L'applicazione è riservata alla receptionist. Il suo utente (`receptionist@coworking.local`) viene
-creato all'avvio con la password di `RECEPTIONIST_PASSWORD` in `.env`; cambiare la password in `.env`
-e riavviare l'API la aggiorna. La password deve avere almeno 6 caratteri, con maiuscola, minuscola,
+creato al primo avvio con la password di `RECEPTIONIST_PASSWORD` in `.env`. La password vale solo
+alla creazione: cambiarla in `.env` dopo non ha effetto sull'utente esistente; per usarne un'altra
+si ricrea il database con `docker compose down -v`. La password deve avere almeno 6 caratteri, con maiuscola, minuscola,
 cifra e un carattere non alfanumerico (regole predefinite di ASP.NET Core Identity).
 La sessione è un cookie HttpOnly di 8 ore, rinnovato a ogni uso. Non c'è blocco dopo tentativi
 falliti: è un limite noto.
@@ -196,12 +218,12 @@ stessa cosa in piccolo.
 
 ```mermaid
 flowchart LR
-    S["service<br/>return new ApiError(...)"] --> R["Result&lt;T&gt;"]
-    R --> M["controller<br/>Match(...)"]
+    S["service<br/>return Errors.NotFound(...)"] --> R["Result&lt;T&gt;"]
+    R --> M["controller<br/>OkOrProblem(...)"]
     M --> T["ToProblem"]
     T --> J["ProblemDetails JSON<br/>stato + code"]
 
-    X["eccezione imprevista"] --> G["GlobalExceptionHandler"]
+    X["eccezione imprevista"] --> G["UseExceptionHandler"]
     G --> J2["500 ProblemDetails<br/>code INTERNAL_ERROR"]
 
     classDef ok fill:#e8f6ee,stroke:#1a7f4b,color:#0d3b22
@@ -212,12 +234,13 @@ flowchart LR
 
 - **Ruolo:** ogni errore atteso (credenziali, non trovato, conflitto) viaggia come valore fino alla risposta HTTP.
 - **Regola:** `ErrorKind` decide lo stato (400, 401, 404, 409); il `code` in `UPPER_SNAKE_CASE` decide il testo; `Detail` è per i log.
-- **Rete di sicurezza:** ciò che sfugge diventa un 500 senza dettagli interni; il dettaglio resta nel log.
-- **File:** [`Result.cs`](backend/src/Coworking.Api/Common/Result.cs) · [`ProblemDetailsExtensions.cs`](backend/src/Coworking.Api/Common/ProblemDetailsExtensions.cs) · [`GlobalExceptionHandler.cs`](backend/src/Coworking.Api/Common/GlobalExceptionHandler.cs)
+- **Un solo elenco:** tutti gli errori attesi stanno in [`Errors.cs`](backend/src/Coworking.Api/Common/Errors.cs); ogni `code` ha il suo testo italiano in `error-messages.ts`.
+- **Rete di sicurezza:** ciò che sfugge lo raccoglie `UseExceptionHandler` di ASP.NET: scrive l'eccezione nel log e risponde 500 senza dettagli interni (`AddProblemDetails` aggiunge `code` INTERNAL_ERROR).
+- **File:** [`Result.cs`](backend/src/Coworking.Api/Common/Result.cs) · [`ProblemDetailsExtensions.cs`](backend/src/Coworking.Api/Common/ProblemDetailsExtensions.cs) · [`Errors.cs`](backend/src/Coworking.Api/Common/Errors.cs)
 
 **Per approfondire**
 
-- **Microsoft Learn · guida, EN:** [Gestione degli errori in ASP.NET Core 10](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/error-handling?view=aspnetcore-10.0) — collega `IExceptionHandler` e ProblemDetails a `GlobalExceptionHandler.cs`.
+- **Microsoft Learn · guida, EN:** [Gestione degli errori in ASP.NET Core 10](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/error-handling?view=aspnetcore-10.0) — collega `UseExceptionHandler` e `AddProblemDetails` alla sequenza di `Program.cs`.
 - **IETF · specifica, EN:** [RFC 9457: Problem Details](https://datatracker.ietf.org/doc/html/rfc9457) — leggi i campi della risposta e le estensioni; qui `code` è un'estensione. `Result<T>` è invece un tipo del progetto, da studiare nel file citato.
 
 ### 2. Messaggi per l'utente
@@ -236,7 +259,7 @@ flowchart LR
 
 **Per approfondire**
 
-- **MDN · riferimento, EN:** [Stati delle risposte HTTP](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status) — confronta 400, 401, 403, 404, 409 e 500 con i ripieghi di `errorMessage`.
+- **MDN · riferimento, EN:** [Stati delle risposte HTTP](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status) — confronta 400, 401, 404, 409 e 500 con i ripieghi di `errorMessage`.
 - **MDN · articolo, EN:** [Usare Fetch](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch) — distingui errore di rete e risposta HTTP d'errore; segui poi `unwrap.ts`.
 - **TypeScript · manuale, EN:** [Narrowing](https://www.typescriptlang.org/docs/handbook/2/narrowing.html) — capisci perché si controlla la forma di un valore prima di leggerne `code` e altri campi.
 
@@ -290,7 +313,7 @@ flowchart LR
 ```
 
 - **Ruolo:** stabilire che cosa succede a ogni richiesta, nell'ordine in cui succede.
-- **Regola:** ogni controller richiede la sessione, tranne dove c'è `[AllowAnonymous]` (oggi solo il login). Un 401 o 403 non reindirizza: risponde con un ProblemDetails.
+- **Regola:** ogni controller richiede la sessione, tranne dove c'è `[AllowAnonymous]` (oggi solo il login). Un 401 non reindirizza: risponde con un ProblemDetails. Senza ruoli, un 403 non può capitare.
 - **Sempre disponibili:** `/health` (stato di API e database), `/scalar` (documentazione interattiva), documento OpenAPI.
 - **File:** [`Program.cs`](backend/src/Coworking.Api/Program.cs), con la sequenza numerata in fondo.
 
@@ -349,39 +372,50 @@ flowchart LR
 ### 8. Sale e clienti: dati condivisi
 
 - **Ruolo:** sale e clienti sono la prima feature con dati propri: elenco, creazione, modifica e cancellazione, in `Features/Rooms/` e `Features/Customers/` (le regole stanno in [`RoomsService.cs`](backend/src/Coworking.Api/Features/Rooms/RoomsService.cs) e [`CustomersService.cs`](backend/src/Coworking.Api/Features/Customers/CustomersService.cs)), con le pagine in `app/(app)/rooms/` e `app/(app)/customers/`.
-- **Regola, modifiche concorrenti:** ogni risposta porta `version` (la colonna di sistema `xmin` di PostgreSQL); la modifica la rimanda e l'`UPDATE` vale solo se la riga non è cambiata. Altrimenti 409 `CONCURRENT_UPDATE`: chi arriva secondo non sovrascrive senza saperlo.
-- **Regola, unicità:** nome della sala ed email del cliente sono unici senza distinguere maiuscole. L'email si salva in minuscolo; il nome si conserva come scritto e accanto c'è `normalized_name` in maiuscolo. Su entrambe un indice unico ferma anche due richieste identiche nello stesso istante (409 `ROOM_NAME_TAKEN`, `EMAIL_TAKEN`).
-- **Regola, sale disattivate:** una sala disattivata resta nell'elenco con l'etichetta «Disattivata» e non accetterà nuove prenotazioni; le esistenti restano. Si cancella solo ciò che non ha prenotazioni (409 `HAS_BOOKINGS`, effettivo con le prenotazioni).
+- **Regola, unicità:** nome della sala ed email del cliente sono unici; l'email si salva in minuscolo. Il service controlla prima e risponde 409 (`ROOM_NAME_TAKEN`, `EMAIL_TAKEN`); un indice unico ferma anche due richieste identiche nello stesso istante.
+- **Regola, sale disattivate:** una sala disattivata resta nell'elenco con l'etichetta «Disattivata» e non accetterà nuove prenotazioni; le esistenti restano. Si cancella solo ciò che non ha prenotazioni (409 `HAS_BOOKINGS`).
 - **Frontend:** dopo un salvataggio, riuscito o respinto con 409, l'elenco si rilegge. I moduli leggono i campi con `FormData`; gli errori per campo del backend accendono il campo con un aiuto in italiano.
 - **Dati iniziali:** cinque sale (una disattivata) e cinque clienti arrivano con le migration ([`SeedData.cs`](backend/src/Coworking.Api/Infrastructure/SeedData.cs)).
+
+**Per approfondire**
+
+- **Microsoft Learn · guida, EN:** [Dati iniziali con HasData](https://learn.microsoft.com/en-us/ef/core/modeling/data-seeding) — perché i valori del seed devono essere costanti.
+
+### 9. Prenotazioni e disponibilità
 
 ```mermaid
 sequenceDiagram
     autonumber
-    participant A as Operatore A
-    participant B as Operatore B
-    participant API as RoomsService
+    participant F as Frontend
+    participant S as BookingsService
     participant D as PostgreSQL
 
-    A->>API: GET /api/rooms/2
-    API-->>A: Sala Beta, version 870
-    B->>API: GET /api/rooms/2
-    API-->>B: Sala Beta, version 870
-    A->>API: PUT capienza 7, version 870
-    API->>D: UPDATE ... WHERE id = 2 AND xmin = 870
-    D-->>API: 1 riga, xmin ora 871
-    API-->>A: 200, version 871
-    B->>API: PUT capienza 9, version 870
-    API->>D: UPDATE ... WHERE id = 2 AND xmin = 870
-    D-->>API: 0 righe
-    API-->>B: 409 CONCURRENT_UPDATE
+    F->>S: POST /api/bookings
+    Note over S: regole della richiesta → 400<br/>fascia, passato, orari, capienza
+    Note over S: stato attuale → 409<br/>sala disattivata, sala o cliente occupati
+    S->>D: INSERT
+    alt un'altra richiesta ha preso la fascia un istante prima
+        D-->>S: 23P01, vincolo EXCLUDE
+        S-->>F: 409 ROOM_OVERLAP
+    else
+        D-->>S: ok
+        S-->>F: 201
+    end
 ```
+
+- **Ruolo:** creazione, lettura e annullamento delle prenotazioni in `Features/Bookings/`; la griglia sale × mezz'ore in `features/bookings/` e nella pagina `app/(app)/availability/`.
+- **Sovrapposizione:** gli intervalli sono `[inizio, fine)`: due prenotazioni si sovrappongono se ciascuna comincia prima che l'altra finisca, quindi 9-10 e 10-11 convivono. Vale per la sala e per il cliente, anche su sale diverse.
+- **Due livelli:** il service controlla prima e risponde 409 `ROOM_OVERLAP` o `CUSTOMER_OVERLAP`; due vincoli `EXCLUDE` di PostgreSQL (nella migration, sulle sole prenotazioni confermate) fermano anche due richieste arrivate nello stesso istante, e il loro errore diventa lo stesso 409.
+- **Regole (400):** fine dopo l'inizio e a passi di mezz'ora (`INVALID_TIME_RANGE`), niente passato (`STARTS_IN_PAST`), dentro gli orari della sala (`OUTSIDE_OPENING_HOURS`), non oltre la capienza (`CAPACITY_EXCEEDED`). Sono funzioni pure in [`BookingRules.cs`](backend/src/Coworking.Api/Features/Bookings/BookingRules.cs), con unit test.
+- **Annullamento:** `POST /api/bookings/{id}/cancel` porta lo stato a `Cancelled`; la prenotazione resta visibile. Una prenotazione già cominciata non si annulla (409 `BOOKING_STARTED`).
+- **Disponibilità:** nessun endpoint dedicato. Il frontend legge le sale e le prenotazioni del giorno (`GET /api/bookings?from=&to=`) e calcola la griglia in [`grid.ts`](frontend/src/features/bookings/grid.ts); i filtri sono giorno, fascia oraria e partecipanti. La griglia si rilegge ogni 30 secondi.
+- **Fuso orario:** il backend salva istanti UTC e confronta gli orari di apertura nel fuso del coworking (`TimeZone` in configurazione); il frontend mostra tutto in `Europe/Rome` ([`coworking-time.ts`](frontend/src/lib/coworking-time.ts)).
+- **Dati dimostrativi:** all'avvio, se la tabella è vuota, [`DemoBookingsSeeder.cs`](backend/src/Coworking.Api/Infrastructure/DemoBookingsSeeder.cs) crea prenotazioni fra ieri e dopodomani: con date fisse la demo sarebbe vuota dopo pochi giorni.
 
 **Per approfondire**
 
-- **Microsoft Learn · guida, EN:** [Gestire i conflitti di concorrenza](https://learn.microsoft.com/en-us/ef/core/saving/concurrency) — capisci il token di concorrenza e `DbUpdateConcurrencyException`, poi confronta `UpdateAsync` in `RoomsService.cs`.
-- **Npgsql · guida, EN:** [Token di concorrenza con xmin](https://www.npgsql.org/efcore/modeling/concurrency.html) — perché basta una proprietà `uint` con `IsRowVersion()` e nessuna colonna nuova.
-- **Microsoft Learn · guida, EN:** [Dati iniziali con HasData](https://learn.microsoft.com/en-us/ef/core/modeling/data-seeding) — perché i valori del seed devono essere costanti.
+- **PostgreSQL · documentazione, EN:** [Vincoli di esclusione](https://www.postgresql.org/docs/current/ddl-constraints.html#DDL-CONSTRAINTS-EXCLUSION) — capisci `EXCLUDE USING gist` e ritrovalo nella migration.
+- **PostgreSQL · documentazione, EN:** [Tipi intervallo](https://www.postgresql.org/docs/current/rangetypes.html) — `tstzrange`, l'operatore `&&` e i bordi `[)`.
 
 ---
 
@@ -395,15 +429,15 @@ coworking/
 │   ├── src/Coworking.Api/
 │   │   ├── Program.cs          servizi e pipeline (nucleo 4)
 │   │   ├── Common/             Result, ProblemDetails, gestione eccezioni (nucleo 1)
-│   │   ├── Domain/             entità del dominio: Room, Customer
-│   │   ├── Features/           una cartella per funzione: Auth, Settings, Rooms, Customers
+│   │   ├── Domain/             entità del dominio: Room, Customer, Booking
+│   │   ├── Features/           una cartella per funzione: Auth, Rooms, Customers, Bookings
 │   │   └── Infrastructure/     AppDbContext, configurazioni delle tabelle, migration, dati iniziali
 │   └── tests/                  integrazione (PostgreSQL vero) e unitari
 └── frontend/src/
     ├── app/                    pagine e layout (App Router)
     ├── components/             layout/ (shell) e ui/ (stati, conferma)
-    ├── features/               hook e moduli per funzione: auth, settings, rooms, customers
-    ├── lib/                    client dell'API, errori, fuso orario, formati di date e orari
+    ├── features/               hook e moduli per funzione: auth, rooms, customers, bookings
+    ├── lib/                    client dell'API, errori, date e orari nel fuso del coworking
     └── theme/                  token e tema (nucleo 6)
 ```
 
@@ -418,14 +452,15 @@ esiste e che cosa costerebbe cambiarlo.
 |---|---|---|---|
 | **Accessi falliti** | Nessun blocco dopo tentativi sbagliati. Email sconosciuta e password errata danno lo stesso errore. | C'è una sola utente e un'applicazione interna; il blocco aggiunge un caso (utente bloccata) da gestire in interfaccia. | Attivare il blocco di Identity in `AuthService.LoginAsync` e un messaggio dedicato. |
 | **Una sola utente** | La receptionist è creata all'avvio dalla configurazione; nessuna registrazione e nessun ruolo. | È l'unico profilo richiesto. | Aggiungere ruoli e una pagina di gestione degli utenti. |
-| **Tipo di contenuto degli errori** | Il backend risponde sempre JSON; un filtro riporta gli errori a `application/problem+json`. | Il documento OpenAPI elenca solo JSON senza ripetere la dichiarazione su ogni controller. | Dichiarare il tipo di risposta su ogni controller e togliere il filtro ([`ProblemContentTypeFilter.cs`](backend/src/Coworking.Api/Common/ProblemContentTypeFilter.cs)). |
-| **Utente iniziale** | Un servizio di avvio applica le migration e crea o allinea la receptionist; non parte quando la build genera il documento OpenAPI. | `docker compose up` basta per avere tutto pronto. | Un comando esplicito da lanciare a mano, con un passo in più all'avvio ([`ReceptionistSeeder.cs`](backend/src/Coworking.Api/Infrastructure/ReceptionistSeeder.cs)). |
+| **Utente iniziale** | Un servizio di avvio applica le migration e crea la receptionist se manca; non parte quando la build genera il documento OpenAPI. | `docker compose up` basta per avere tutto pronto. | Un comando esplicito da lanciare a mano, con un passo in più all'avvio ([`ReceptionistSeeder.cs`](backend/src/Coworking.Api/Infrastructure/ReceptionistSeeder.cs)). |
 | **Documentazione dell'API** | Scalar, il documento OpenAPI e `/health` sono raggiungibili senza accesso, in ogni ambiente. | Chi valuta il progetto li apre direttamente dal container. | Limitarli all'ambiente di sviluppo o proteggerli con la sessione. |
-| **Modifiche concorrenti** | Chi salva una sala o un cliente partendo da dati vecchi riceve un 409; il modulo resta aperto e va riaperto per vedere la versione nuova. | Nessuna modifica si perde in silenzio, senza bloccare nessuno mentre legge. | Mostrare nel modulo le differenze fra la propria versione e quella salvata. |
+| **Modifiche concorrenti** | Se due operatori modificano la stessa sala o lo stesso cliente, vince l'ultimo salvataggio. Le prenotazioni invece non si sovrappongono mai (vincoli `EXCLUDE`). | Le anagrafiche cambiano di rado; il conflitto che conta è quello sulle prenotazioni. | Concorrenza ottimistica con la colonna `xmin` di PostgreSQL e un 409 sul salvataggio. |
 | **Cancellazione** | Si cancellano solo sale e clienti senza prenotazioni; una sala si può invece disattivare. | Lo storico delle prenotazioni non perde mai il riferimento. | Cancellazione logica anche per i clienti, con un filtro negli elenchi. |
 | **Orari delle sale** | Apertura e chiusura a passi di mezz'ora, nello stesso giorno. | Sono le celle della griglia della disponibilità; niente sale aperte a cavallo di mezzanotte. | Orari liberi e una griglia che li arrotonda. |
 | **Moduli** | Nessuna libreria di form: i campi si leggono con `FormData`, i controlli del browser fermano gli errori evidenti e la validazione vera è dell'API. | Meno dipendenze, e una sola fonte delle regole. | Una libreria di form con uno schema condiviso per validare anche nel browser. |
-| **Elenchi** | Sale e clienti arrivano tutti in una risposta, senza paginazione né ricerca. | Un coworking ha poche sale e qualche centinaio di clienti. | Parametri di pagina e ricerca sulle route degli elenchi. |
+| **Elenchi** | Sale e clienti arrivano tutti in una risposta, senza paginazione né ricerca; le prenotazioni si leggono al massimo 31 giorni alla volta. | Un coworking ha poche sale e qualche centinaio di clienti. | Parametri di pagina e ricerca sulle route degli elenchi. |
+| **Fuso orario** | Un solo fuso, `Europe/Rome`: in configurazione per il backend, costante nel frontend. | Il coworking ha una sede sola. | Rileggere il fuso dal backend o salvarlo per sala. |
+| **Aggiornamento della griglia** | La griglia si rilegge ogni 30 secondi, e subito dopo un 409. | Più operatori vedono le prenotazioni degli altri senza ricaricare. | Notifiche in tempo reale (SignalR o Server-Sent Events). |
 
 ---
 
