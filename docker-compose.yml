@@ -40,6 +40,19 @@ services:
       - "3000:3000"
     depends_on:
       - api
+    # URL per il browser sulla macchina che esegue Docker, stampati a ogni avvio.
+    command:
+      - sh
+      - -c
+      - |
+        printf '%s\n' \
+          '' \
+          'Coworking · collegamenti locali (attendi Ready per aprire il frontend)' \
+          '  Applicazione:  http://localhost:3000' \
+          '  API (Scalar):  http://localhost:8080/scalar' \
+          '  Health API/DB: http://localhost:8080/health' \
+          ''
+        exec node server.js
 
 volumes:
   db-data:
