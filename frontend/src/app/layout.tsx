@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { AppRouterCacheProvider } from "@mui/material-nextjs/v16-appRouter";
 import "@fontsource/rubik/400.css";
 import "@fontsource/rubik/500.css";
-import "@fontsource/rubik/700.css";
+import "@fontsource/rubik/600.css";
 import { Providers } from "./providers";
 
 export const metadata: Metadata = {
