@@ -2,10 +2,14 @@
 // Riceve:  configurazione (appsettings e variabili d'ambiente)
 // Produce: l'API in ascolto
 // Regola:  l'ordine dei middleware conta: vedi la sequenza numerata in fondo
-// Vedi:    Common/, Features/Auth/, Infrastructure/
+// Vedi:    Common/, Features/, Infrastructure/
 
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Coworking.Api.Common;
 using Coworking.Api.Features.Auth;
+using Coworking.Api.Features.Customers;
+using Coworking.Api.Features.Rooms;
 using Coworking.Api.Infrastructure;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -23,6 +27,8 @@ builder.Services.AddDbContext<AppDbContext>(options => options
         ?? throw new InvalidOperationException("Missing connection string 'ConnectionStrings:Default'."))
     .UseSnakeCaseNamingConvention());
 
+// Orologio iniettato: i test possono fermarlo, e le regole sul passato non dipendono da DateTime.Now.
+builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton(CoworkingTimeZone.FromId(builder.Configuration["TimeZone"]
     ?? throw new InvalidOperationException("Missing configuration key 'TimeZone'.")));
 
@@ -54,6 +60,8 @@ builder.Services
     }));
 builder.Services.AddAuthorization();
 builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<RoomsService>();
+builder.Services.AddScoped<CustomersService>();
 // La build avvia l'app (host compreso) per scrivere il documento OpenAPI, senza database né
 // password: in quel caso il seed non parte.
 if (System.Reflection.Assembly.GetEntryAssembly()?.GetName().Name != "GetDocument.Insider")
@@ -78,7 +86,9 @@ builder.Services.AddControllers(options =>
     options.Filters.Add(new ProducesAttribute("application/json"));
     options.Filters.Add(new AuthorizeFilter());
     options.Filters.Add<ProblemContentTypeFilter>();
-});
+}).AddJsonOptions(options => ConfigureJson(options.JsonSerializerOptions));
+// Le stesse regole per il documento OpenAPI, che legge le opzioni JSON minimali e non quelle di MVC.
+builder.Services.ConfigureHttpJsonOptions(options => ConfigureJson(options.SerializerOptions));
 builder.Services.AddOpenApi();
 builder.Services.AddHealthChecks().AddDbContextCheck<AppDbContext>();
 
@@ -103,3 +113,12 @@ app.MapHealthChecks("/health");
 app.MapControllers();
 
 app.Run();
+
+// Numeri solo come numeri (non "4" fra virgolette): il contratto dichiara integer e i tipi del
+// frontend restano number. Un campo obbligatorio assente è un 400, non un valore predefinito
+// silenzioso (0, 00:00, false).
+static void ConfigureJson(JsonSerializerOptions json)
+{
+    json.NumberHandling = JsonNumberHandling.Strict;
+    json.RespectRequiredConstructorParameters = true;
+}

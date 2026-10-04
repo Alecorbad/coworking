@@ -16,3 +16,7 @@ indent_size = 2
 
 [*.md]
 trim_trailing_whitespace = false
+
+[backend/src/Coworking.Api/Infrastructure/Migrations/*.cs]
+# Scritte da dotnet ef: le regole di analisi non si applicano al codice generato.
+generated_code = true

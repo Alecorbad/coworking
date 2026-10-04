@@ -13,6 +13,10 @@ public sealed class AuthTests(ApiFactory factory)
     [InlineData("GET", "/api/auth/me")]
     [InlineData("POST", "/api/auth/logout")]
     [InlineData("GET", "/api/settings")]
+    [InlineData("GET", "/api/rooms")]
+    [InlineData("DELETE", "/api/rooms/1")]
+    [InlineData("GET", "/api/customers")]
+    [InlineData("DELETE", "/api/customers/1")]
     public async Task ProtectedRoute_Returns401WithCode_WhenThereIsNoSession(string method, string path)
     {
         // Il client non segue i redirect: il 302 predefinito del cookie sarebbe un errore.

@@ -25,6 +25,492 @@
         }
       }
     },
+    "/api/rooms": {
+      "get": {
+        "tags": [
+          "Rooms"
+        ],
+        "summary": "Elenca tutte le sale in ordine di nome, comprese quelle disattivate.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RoomResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Rooms"
+        ],
+        "summary": "Crea una sala, attiva.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRoomRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRoomRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRoomRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoomResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/rooms/{id}": {
+      "get": {
+        "tags": [
+          "Rooms"
+        ],
+        "summary": "Legge una sala.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoomResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Rooms"
+        ],
+        "summary": "Modifica una sala, anche per disattivarla o riattivarla.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRoomRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRoomRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRoomRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoomResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Rooms"
+        ],
+        "summary": "Cancella una sala senza prenotazioni; altrimenti va disattivata.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/customers": {
+      "get": {
+        "tags": [
+          "Customers"
+        ],
+        "summary": "Elenca i clienti in ordine di cognome e nome.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CustomerResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Customers"
+        ],
+        "summary": "Registra un cliente.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCustomerRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCustomerRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCustomerRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/customers/{id}": {
+      "get": {
+        "tags": [
+          "Customers"
+        ],
+        "summary": "Legge un cliente.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Customers"
+        ],
+        "summary": "Modifica un cliente.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCustomerRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCustomerRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCustomerRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Customers"
+        ],
+        "summary": "Cancella un cliente senza prenotazioni.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/auth/login": {
       "post": {
         "tags": [
@@ -141,6 +627,98 @@
   },
   "components": {
     "schemas": {
+      "CreateCustomerRequest": {
+        "required": [
+          "firstName",
+          "lastName",
+          "email"
+        ],
+        "type": "object",
+        "properties": {
+          "firstName": {
+            "type": "string",
+            "description": "Nome."
+          },
+          "lastName": {
+            "type": "string",
+            "description": "Cognome."
+          },
+          "email": {
+            "type": "string",
+            "description": "Unica senza distinguere maiuscole; si salva in minuscolo."
+          }
+        }
+      },
+      "CreateRoomRequest": {
+        "required": [
+          "name",
+          "capacity",
+          "openingTime",
+          "closingTime"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Nome mostrato nella griglia; unico senza distinguere maiuscole."
+          },
+          "capacity": {
+            "type": "integer",
+            "description": "Partecipanti massimi per prenotazione.",
+            "format": "int32"
+          },
+          "openingTime": {
+            "type": "string",
+            "description": "Apertura, ora locale del coworking, a passi di mezz'ora.",
+            "format": "time"
+          },
+          "closingTime": {
+            "type": "string",
+            "description": "Chiusura, dopo l'apertura, a passi di mezz'ora.",
+            "format": "time"
+          }
+        }
+      },
+      "CustomerResponse": {
+        "required": [
+          "id",
+          "firstName",
+          "lastName",
+          "email",
+          "registeredAt",
+          "version"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Identificativo del cliente.",
+            "format": "int32"
+          },
+          "firstName": {
+            "type": "string",
+            "description": "Nome."
+          },
+          "lastName": {
+            "type": "string",
+            "description": "Cognome."
+          },
+          "email": {
+            "type": "string",
+            "description": "Email, in minuscolo."
+          },
+          "registeredAt": {
+            "type": "string",
+            "description": "Istante della registrazione, in UTC.",
+            "format": "date-time"
+          },
+          "version": {
+            "type": "integer",
+            "description": "Da rimandare nella modifica: rivela se un altro operatore ha salvato prima.",
+            "format": "uint32"
+          }
+        }
+      },
       "LoginRequest": {
         "required": [
           "email",
@@ -184,11 +762,9 @@
             ]
           },
           "status": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
               "null",
-              "integer",
-              "string"
+              "integer"
             ],
             "format": "int32"
           },
@@ -206,6 +782,53 @@
           }
         }
       },
+      "RoomResponse": {
+        "required": [
+          "id",
+          "name",
+          "capacity",
+          "openingTime",
+          "closingTime",
+          "isActive",
+          "version"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Identificativo della sala.",
+            "format": "int32"
+          },
+          "name": {
+            "type": "string",
+            "description": "Nome della sala."
+          },
+          "capacity": {
+            "type": "integer",
+            "description": "Partecipanti massimi per prenotazione.",
+            "format": "int32"
+          },
+          "openingTime": {
+            "type": "string",
+            "description": "Apertura, ora locale del coworking.",
+            "format": "time"
+          },
+          "closingTime": {
+            "type": "string",
+            "description": "Chiusura, ora locale del coworking.",
+            "format": "time"
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "false se la sala non accetta nuove prenotazioni."
+          },
+          "version": {
+            "type": "integer",
+            "description": "Da rimandare nella modifica: rivela se un altro operatore ha salvato prima.",
+            "format": "uint32"
+          }
+        }
+      },
       "SettingsResponse": {
         "required": [
           "timeZone"
@@ -217,12 +840,87 @@
             "description": "Fuso IANA in cui il frontend mostra tutti gli orari."
           }
         }
+      },
+      "UpdateCustomerRequest": {
+        "required": [
+          "firstName",
+          "lastName",
+          "email",
+          "version"
+        ],
+        "type": "object",
+        "properties": {
+          "firstName": {
+            "type": "string",
+            "description": "Nome."
+          },
+          "lastName": {
+            "type": "string",
+            "description": "Cognome."
+          },
+          "email": {
+            "type": "string",
+            "description": "Unica senza distinguere maiuscole; si salva in minuscolo."
+          },
+          "version": {
+            "type": "integer",
+            "description": "La version letta insieme al cliente: se nel frattempo è cambiata, la modifica viene rifiutata.",
+            "format": "uint32"
+          }
+        }
+      },
+      "UpdateRoomRequest": {
+        "required": [
+          "name",
+          "capacity",
+          "openingTime",
+          "closingTime",
+          "isActive",
+          "version"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Nome mostrato nella griglia; unico senza distinguere maiuscole."
+          },
+          "capacity": {
+            "type": "integer",
+            "description": "Partecipanti massimi per prenotazione.",
+            "format": "int32"
+          },
+          "openingTime": {
+            "type": "string",
+            "description": "Apertura, ora locale del coworking, a passi di mezz'ora.",
+            "format": "time"
+          },
+          "closingTime": {
+            "type": "string",
+            "description": "Chiusura, dopo l'apertura, a passi di mezz'ora.",
+            "format": "time"
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "false disattiva la sala: niente nuove prenotazioni, le esistenti restano."
+          },
+          "version": {
+            "type": "integer",
+            "description": "La version letta insieme alla sala: se nel frattempo è cambiata, la modifica viene rifiutata.",
+            "format": "uint32"
+          }
+        }
       }
     }
   },
   "tags": [
     {
       "name": "Settings"
+    },
+    {
+      "name": "Rooms"
+    },
+    {
+      "name": "Customers"
     },
     {
       "name": "Auth"

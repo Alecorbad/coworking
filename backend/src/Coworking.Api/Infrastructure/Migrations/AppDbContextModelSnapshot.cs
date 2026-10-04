@@ -22,6 +22,217 @@ namespace Coworking.Api.Infrastructure.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("Coworking.Api.Domain.Customer", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                    NpgsqlPropertyBuilderExtensions.HasIdentityOptions(b.Property<int>("Id"), 100L, null, null, null, null, null);
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("email");
+
+                    b.Property<string>("FirstName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("first_name");
+
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("last_name");
+
+                    b.Property<DateTimeOffset>("RegisteredAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("registered_at");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_customers");
+
+                    b.HasIndex("Email")
+                        .IsUnique()
+                        .HasDatabaseName("ix_customers_email");
+
+                    b.ToTable("customers", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Email = "giulia.bianchi@example.com",
+                            FirstName = "Giulia",
+                            LastName = "Bianchi",
+                            RegisteredAt = new DateTimeOffset(new DateTime(2026, 9, 1, 8, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            Version = 0u
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Email = "marco.rossi@example.com",
+                            FirstName = "Marco",
+                            LastName = "Rossi",
+                            RegisteredAt = new DateTimeOffset(new DateTime(2026, 9, 1, 8, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            Version = 0u
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Email = "sara.conti@example.com",
+                            FirstName = "Sara",
+                            LastName = "Conti",
+                            RegisteredAt = new DateTimeOffset(new DateTime(2026, 9, 4, 8, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            Version = 0u
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Email = "luca.ferrari@example.com",
+                            FirstName = "Luca",
+                            LastName = "Ferrari",
+                            RegisteredAt = new DateTimeOffset(new DateTime(2026, 9, 11, 8, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            Version = 0u
+                        },
+                        new
+                        {
+                            Id = 5,
+                            Email = "elena.romano@example.com",
+                            FirstName = "Elena",
+                            LastName = "Romano",
+                            RegisteredAt = new DateTimeOffset(new DateTime(2026, 9, 15, 8, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            Version = 0u
+                        });
+                });
+
+            modelBuilder.Entity("Coworking.Api.Domain.Room", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                    NpgsqlPropertyBuilderExtensions.HasIdentityOptions(b.Property<int>("Id"), 100L, null, null, null, null, null);
+
+                    b.Property<int>("Capacity")
+                        .HasColumnType("integer")
+                        .HasColumnName("capacity");
+
+                    b.Property<TimeOnly>("ClosingTime")
+                        .HasColumnType("time without time zone")
+                        .HasColumnName("closing_time");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("NormalizedName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("normalized_name");
+
+                    b.Property<TimeOnly>("OpeningTime")
+                        .HasColumnType("time without time zone")
+                        .HasColumnName("opening_time");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_rooms");
+
+                    b.HasIndex("NormalizedName")
+                        .IsUnique()
+                        .HasDatabaseName("ix_rooms_normalized_name");
+
+                    b.ToTable("rooms", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_rooms_capacity", "capacity > 0");
+
+                            t.HasCheckConstraint("ck_rooms_opening_hours", "closing_time > opening_time");
+                        });
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Capacity = 4,
+                            ClosingTime = new TimeOnly(20, 0, 0),
+                            IsActive = true,
+                            Name = "Sala Alfa",
+                            NormalizedName = "SALA ALFA",
+                            OpeningTime = new TimeOnly(8, 0, 0),
+                            Version = 0u
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Capacity = 6,
+                            ClosingTime = new TimeOnly(20, 0, 0),
+                            IsActive = true,
+                            Name = "Sala Beta",
+                            NormalizedName = "SALA BETA",
+                            OpeningTime = new TimeOnly(8, 0, 0),
+                            Version = 0u
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Capacity = 10,
+                            ClosingTime = new TimeOnly(18, 0, 0),
+                            IsActive = true,
+                            Name = "Sala Gamma",
+                            NormalizedName = "SALA GAMMA",
+                            OpeningTime = new TimeOnly(9, 0, 0),
+                            Version = 0u
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Capacity = 20,
+                            ClosingTime = new TimeOnly(18, 0, 0),
+                            IsActive = true,
+                            Name = "Sala Delta",
+                            NormalizedName = "SALA DELTA",
+                            OpeningTime = new TimeOnly(9, 0, 0),
+                            Version = 0u
+                        },
+                        new
+                        {
+                            Id = 5,
+                            Capacity = 8,
+                            ClosingTime = new TimeOnly(13, 0, 0),
+                            IsActive = false,
+                            Name = "Sala Epsilon",
+                            NormalizedName = "SALA EPSILON",
+                            OpeningTime = new TimeOnly(9, 0, 0),
+                            Version = 0u
+                        });
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUser", b =>
                 {
                     b.Property<string>("Id")
