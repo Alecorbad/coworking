@@ -8,10 +8,9 @@ namespace Coworking.Api.Features.Rooms;
 /// <param name="OpeningTime">Apertura, ora locale del coworking.</param>
 /// <param name="ClosingTime">Chiusura, ora locale del coworking.</param>
 /// <param name="IsActive">false se la sala non accetta nuove prenotazioni.</param>
-/// <param name="Version">Da rimandare nella modifica: rivela se un altro operatore ha salvato prima.</param>
 public sealed record RoomResponse(
-    int Id, string Name, int Capacity, TimeOnly OpeningTime, TimeOnly ClosingTime, bool IsActive, uint Version)
+    int Id, string Name, int Capacity, TimeOnly OpeningTime, TimeOnly ClosingTime, bool IsActive)
 {
     public static RoomResponse From(Room room) => new(
-        room.Id, room.Name, room.Capacity, room.OpeningTime, room.ClosingTime, room.IsActive, room.Version);
+        room.Id, room.Name, room.Capacity, room.OpeningTime, room.ClosingTime, room.IsActive);
 }

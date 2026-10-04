@@ -12,7 +12,6 @@ public sealed class AuthTests(ApiFactory factory)
     [Theory]
     [InlineData("GET", "/api/auth/me")]
     [InlineData("POST", "/api/auth/logout")]
-    [InlineData("GET", "/api/settings")]
     [InlineData("GET", "/api/rooms")]
     [InlineData("DELETE", "/api/rooms/1")]
     [InlineData("GET", "/api/customers")]

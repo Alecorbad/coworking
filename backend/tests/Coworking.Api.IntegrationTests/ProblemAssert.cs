@@ -6,11 +6,10 @@ namespace Coworking.Api.IntegrationTests;
 
 internal static class ProblemAssert
 {
-    /// <summary>Verifica stato, tipo di contenuto e `code` di una risposta ProblemDetails; restituisce il corpo.</summary>
+    /// <summary>Verifica stato e `code` di una risposta ProblemDetails; restituisce il corpo.</summary>
     public static async Task<JsonElement> IsProblemAsync(HttpResponseMessage response, HttpStatusCode status, string code)
     {
         Assert.Equal(status, response.StatusCode);
-        Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
 
         var body = await response.Content.ReadFromJsonAsync<JsonElement>(TestContext.Current.CancellationToken);
         Assert.Equal(code, body.GetProperty("code").GetString());

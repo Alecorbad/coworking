@@ -19,11 +19,11 @@ public static class SeedData
 
     public static readonly Room[] Rooms =
     [
-        new() { Id = 1, Name = "Sala Alfa", NormalizedName = "SALA ALFA", Capacity = 4, OpeningTime = new(8, 0), ClosingTime = new(20, 0) },
-        new() { Id = 2, Name = "Sala Beta", NormalizedName = "SALA BETA", Capacity = 6, OpeningTime = new(8, 0), ClosingTime = new(20, 0) },
-        new() { Id = 3, Name = "Sala Gamma", NormalizedName = "SALA GAMMA", Capacity = 10, OpeningTime = new(9, 0), ClosingTime = new(18, 0) },
-        new() { Id = 4, Name = "Sala Delta", NormalizedName = "SALA DELTA", Capacity = 20, OpeningTime = new(9, 0), ClosingTime = new(18, 0) },
-        new() { Id = 5, Name = "Sala Epsilon", NormalizedName = "SALA EPSILON", Capacity = 8, OpeningTime = new(9, 0), ClosingTime = new(13, 0), IsActive = false },
+        new() { Id = 1, Name = "Sala Alfa", Capacity = 4, OpeningTime = new(8, 0), ClosingTime = new(20, 0) },
+        new() { Id = 2, Name = "Sala Beta", Capacity = 6, OpeningTime = new(8, 0), ClosingTime = new(20, 0) },
+        new() { Id = 3, Name = "Sala Gamma", Capacity = 10, OpeningTime = new(9, 0), ClosingTime = new(18, 0) },
+        new() { Id = 4, Name = "Sala Delta", Capacity = 20, OpeningTime = new(9, 0), ClosingTime = new(18, 0) },
+        new() { Id = 5, Name = "Sala Epsilon", Capacity = 8, OpeningTime = new(9, 0), ClosingTime = new(13, 0), IsActive = false },
     ];
 
     private static readonly DateTimeOffset SeededAt = new(2026, 9, 1, 8, 0, 0, TimeSpan.Zero);

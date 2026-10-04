@@ -22,7 +22,7 @@ public sealed class AuthController(AuthService auth) : ControllerBase
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<MeResponse>> Login(LoginRequest request) =>
-        (await auth.LoginAsync(request)).Match<ActionResult<MeResponse>>(me => Ok(me), error => this.ToProblem(error));
+        this.OkOrProblem(await auth.LoginAsync(request));
 
     /// <summary>Chiude la sessione.</summary>
     [HttpPost("logout")]
@@ -38,6 +38,6 @@ public sealed class AuthController(AuthService auth) : ControllerBase
     [HttpGet("me")]
     [ProducesResponseType<MeResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized)]
-    public async Task<ActionResult<MeResponse>> Me() =>
-        (await auth.GetCurrentAsync(User)).Match<ActionResult<MeResponse>>(me => Ok(me), error => this.ToProblem(error));
+    // Il nome nel cookie è l'email (UserName = email): nessuna lettura del database.
+    public MeResponse Me() => new(User.Identity!.Name!);
 }

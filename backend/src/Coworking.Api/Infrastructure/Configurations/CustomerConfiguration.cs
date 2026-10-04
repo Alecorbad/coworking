@@ -1,6 +1,6 @@
 // Ruolo:   forma della tabella customers
 // Riceve:  il modello Customer
-// Produce: colonne, indice unico sull'email, token di concorrenza, righe del seed
+// Produce: colonne, indice unico sull'email, righe del seed
 // Regola:  ogni modifica qui richiede una migration
 // Vedi:    Domain/Customer.cs, Infrastructure/SeedData.cs
 
@@ -24,7 +24,6 @@ public sealed class CustomerConfiguration : IEntityTypeConfiguration<Customer>
         // Il service controlla prima e risponde con un errore chiaro; l'indice ferma anche due
         // richieste con la stessa email arrivate nello stesso istante.
         builder.HasIndex(c => c.Email).IsUnique();
-        builder.Property(c => c.Version).IsRowVersion();
 
         builder.HasData(SeedData.Customers);
     }

@@ -65,22 +65,6 @@ public sealed class CustomersTests(ApiFactory factory)
     }
 
     [Fact]
-    public async Task Update_Returns409_WhenAnotherOperatorSavedFirst()
-    {
-        var client = await factory.CreateAuthenticatedClientAsync();
-        var customer = await CreateAsync(client);
-
-        // Due operatori partono dalla stessa version: il primo salva, il secondo arriva tardi.
-        var first = await client.PutAsJsonAsync($"/api/customers/{customer.Id}", ToUpdate(customer) with { LastName = "Primo" }, Ct);
-        var second = await client.PutAsJsonAsync($"/api/customers/{customer.Id}", ToUpdate(customer) with { LastName = "Secondo" }, Ct);
-
-        first.EnsureSuccessStatusCode();
-        await ProblemAssert.IsProblemAsync(second, HttpStatusCode.Conflict, "CONCURRENT_UPDATE");
-        var stored = await client.GetFromJsonAsync<CustomerResponse>($"/api/customers/{customer.Id}", Ct);
-        Assert.Equal("Primo", stored!.LastName);
-    }
-
-    [Fact]
     public async Task Update_Returns409_WhenEmailBelongsToAnotherCustomer()
     {
         var client = await factory.CreateAuthenticatedClientAsync();
@@ -103,7 +87,6 @@ public sealed class CustomersTests(ApiFactory factory)
         response.EnsureSuccessStatusCode();
         var updated = await response.Content.ReadFromJsonAsync<CustomerResponse>(Ct);
         Assert.Equal(customer.RegisteredAt, updated!.RegisteredAt);
-        Assert.NotEqual(customer.Version, updated.Version);
     }
 
     [Fact]
@@ -129,7 +112,7 @@ public sealed class CustomersTests(ApiFactory factory)
         var request = new HttpRequestMessage(new HttpMethod(method), "/api/customers/999999");
         if (method == "PUT")
         {
-            request.Content = JsonContent.Create(new UpdateCustomerRequest("Anna", "Verdi", UniqueEmail(), 0));
+            request.Content = JsonContent.Create(new UpdateCustomerRequest("Anna", "Verdi", UniqueEmail()));
         }
 
         var response = await client.SendAsync(request, Ct);
@@ -140,7 +123,7 @@ public sealed class CustomersTests(ApiFactory factory)
     private static string UniqueEmail() => $"{Guid.NewGuid():N}@example.com";
 
     private static UpdateCustomerRequest ToUpdate(CustomerResponse customer) =>
-        new(customer.FirstName, customer.LastName, customer.Email, customer.Version);
+        new(customer.FirstName, customer.LastName, customer.Email);
 
     private static async Task<CustomerResponse> CreateAsync(HttpClient client)
     {

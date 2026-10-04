@@ -23,9 +23,14 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
 
     public DbSet<Customer> Customers => Set<Customer>();
 
+    public DbSet<Booking> Bookings => Set<Booking>();
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
+        // Serve ai vincoli EXCLUDE delle prenotazioni: mette gli operatori di uguaglianza degli
+        // interi (sala, cliente) negli indici GiST, accanto alla sovrapposizione degli intervalli.
+        builder.HasPostgresExtension("btree_gist");
         builder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
     }
 }

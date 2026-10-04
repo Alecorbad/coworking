@@ -10,13 +10,8 @@ public sealed class Room
 {
     public int Id { get; set; }
 
-    /// <summary>Conservato come scritto; l'unicità la garantisce <see cref="NormalizedName"/>.</summary>
+    /// <summary>Unico: l'indice sulla colonna ferma i doppioni.</summary>
     public required string Name { get; set; }
-
-    /// <summary>Il nome in maiuscolo, con indice unico: «sala alfa» e «Sala Alfa» sono la stessa sala.</summary>
-    public required string NormalizedName { get; set; }
-
-    public static string Normalize(string name) => name.Trim().ToUpperInvariant();
 
     /// <summary>Numero massimo di partecipanti a una prenotazione.</summary>
     public int Capacity { get; set; }
@@ -28,7 +23,4 @@ public sealed class Room
     public TimeOnly ClosingTime { get; set; }
 
     public bool IsActive { get; set; } = true;
-
-    /// <summary>Colonna di sistema xmin di PostgreSQL: cambia a ogni modifica della riga.</summary>
-    public uint Version { get; set; }
 }

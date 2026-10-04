@@ -1,7 +1,7 @@
 // Ruolo:   regole dei clienti: elenco, creazione, modifica, cancellazione
 // Riceve:  richieste già validate nella forma dal controller
 // Produce: Result<CustomerResponse> (o di un elenco); errori attesi come ApiError
-// Regola:  la modifica parte dalla version letta dal client: se la riga è cambiata, 409
+// Regola:  email unica (409 EMAIL_TAKEN); con prenotazioni non si cancella (409 HAS_BOOKINGS)
 // Vedi:    Features/Customers/CustomersController.cs, Infrastructure/Configurations/CustomerConfiguration.cs
 
 using Coworking.Api.Common;
@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Coworking.Api.Features.Customers;
 
-public sealed class CustomersService(AppDbContext db, TimeProvider clock)
+public sealed class CustomersService(AppDbContext db)
 {
     private const string EmailIndex = "ix_customers_email";
 
@@ -25,25 +25,22 @@ public sealed class CustomersService(AppDbContext db, TimeProvider clock)
     public async Task<Result<CustomerResponse>> GetAsync(int id) =>
         await db.Customers.AsNoTracking().FirstOrDefaultAsync(c => c.Id == id) is { } customer
             ? CustomerResponse.From(customer)
-            : NotFound(id);
+            : Errors.NotFound("Customer", id);
 
     public async Task<Result<CustomerResponse>> CreateAsync(CreateCustomerRequest request)
     {
         var email = Customer.NormalizeEmail(request.Email);
         if (await EmailTakenAsync(email, exceptId: null))
         {
-            return EmailTaken(email);
+            return Errors.EmailTaken(email);
         }
 
-        // PostgreSQL conserva i microsecondi, .NET i decimi di microsecondo: senza troncare, la
-        // risposta della creazione e la rilettura successiva mostrerebbero due istanti diversi.
-        var now = clock.GetUtcNow();
         var customer = new Customer
         {
             FirstName = request.FirstName.Trim(),
             LastName = request.LastName.Trim(),
             Email = email,
-            RegisteredAt = now.AddTicks(-(now.Ticks % TimeSpan.TicksPerMicrosecond)),
+            RegisteredAt = DbClock.UtcNow(),
         };
         db.Customers.Add(customer);
         return await SaveAsync(customer);
@@ -54,18 +51,15 @@ public sealed class CustomersService(AppDbContext db, TimeProvider clock)
         var customer = await db.Customers.FirstOrDefaultAsync(c => c.Id == id);
         if (customer is null)
         {
-            return NotFound(id);
+            return Errors.NotFound("Customer", id);
         }
 
         var email = Customer.NormalizeEmail(request.Email);
         if (await EmailTakenAsync(email, exceptId: id))
         {
-            return EmailTaken(email);
+            return Errors.EmailTaken(email);
         }
 
-        // La version del client diventa il valore «originale»: l'UPDATE ha WHERE xmin = version,
-        // e se nel frattempo un altro operatore ha salvato non tocca nessuna riga.
-        db.Entry(customer).Property(c => c.Version).OriginalValue = request.Version;
         customer.FirstName = request.FirstName.Trim();
         customer.LastName = request.LastName.Trim();
         customer.Email = email;
@@ -73,13 +67,18 @@ public sealed class CustomersService(AppDbContext db, TimeProvider clock)
     }
 
     /// <summary>
-    /// Cancella un cliente senza prenotazioni. Con prenotazioni la risposta sarà 409 HAS_BOOKINGS
-    /// (le prenotazioni arrivano con la loro feature).
+    /// Cancella un cliente senza prenotazioni, nemmeno annullate: lo storico non deve perdere il
+    /// riferimento. Con prenotazioni 409 HAS_BOOKINGS.
     /// </summary>
     public async Task<Result<bool>> DeleteAsync(int id)
     {
+        if (await db.Bookings.AnyAsync(b => b.CustomerId == id))
+        {
+            return Errors.HasBookings("Customer", id);
+        }
+
         var deleted = await db.Customers.Where(c => c.Id == id).ExecuteDeleteAsync();
-        return deleted == 0 ? NotFound(id) : true;
+        return deleted == 0 ? Errors.NotFound("Customer", id) : true;
     }
 
     private Task<bool> EmailTakenAsync(string email, int? exceptId) =>
@@ -92,19 +91,9 @@ public sealed class CustomersService(AppDbContext db, TimeProvider clock)
             await db.SaveChangesAsync();
             return CustomerResponse.From(customer);
         }
-        catch (DbUpdateConcurrencyException)
+        catch (DbUpdateException exception) when (exception.IsViolationOf(EmailIndex))
         {
-            return new ApiError(ErrorKind.Conflict, "CONCURRENT_UPDATE",
-                $"Customer {customer.Id} was changed by someone else after it was read.");
-        }
-        catch (DbUpdateException exception) when (exception.IsUniqueViolation(EmailIndex))
-        {
-            return EmailTaken(customer.Email);
+            return Errors.EmailTaken(customer.Email);
         }
     }
-
-    private static ApiError NotFound(int id) => new(ErrorKind.NotFound, "NOT_FOUND", $"Customer {id} does not exist.");
-
-    private static ApiError EmailTaken(string email) =>
-        new(ErrorKind.Conflict, "EMAIL_TAKEN", $"A customer with email '{email}' already exists.");
 }

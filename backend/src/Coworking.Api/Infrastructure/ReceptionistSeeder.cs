@@ -1,7 +1,7 @@
 // Ruolo:   porta il database allo stato iniziale a ogni avvio
 // Riceve:  Receptionist:Email e Receptionist:Password dalla configurazione
-// Produce: migration applicate e utente receptionist creato, o con la password allineata
-// Regola:  la configurazione (.env) è l'unica fonte della password
+// Produce: migration applicate e utente receptionist creato se manca
+// Regola:  la password arriva dalla configurazione (.env), mai dal codice
 // Vedi:    Program.cs (registrazione), docker-compose.yml
 
 using Microsoft.AspNetCore.Identity;
@@ -10,9 +10,8 @@ using Microsoft.EntityFrameworkCore;
 namespace Coworking.Api.Infrastructure;
 
 /// <summary>
-/// All'avvio applica le migration e crea l'unico utente (la receptionist) con la password
-/// della configurazione. Se l'utente esiste già e la password in configurazione è
-/// cambiata, la allinea: la configurazione resta l'unica fonte.
+/// All'avvio applica le migration e, se manca, crea l'unico utente (la receptionist) con la
+/// password della configurazione.
 /// </summary>
 public sealed class ReceptionistSeeder(IServiceScopeFactory scopes, IConfiguration configuration) : IHostedService
 {
@@ -27,17 +26,10 @@ public sealed class ReceptionistSeeder(IServiceScopeFactory scopes, IConfigurati
         await scope.ServiceProvider.GetRequiredService<AppDbContext>().Database.MigrateAsync(cancellationToken);
 
         var users = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
-        var user = await users.FindByEmailAsync(email);
-        if (user is null)
+        if (await users.FindByEmailAsync(email) is null)
         {
+            // UserName = email: il login cerca l'utente per nome, che è la sua email.
             Check(await users.CreateAsync(new IdentityUser { UserName = email, Email = email }, password));
-            return;
-        }
-
-        if (!await users.CheckPasswordAsync(user, password))
-        {
-            Check(await users.RemovePasswordAsync(user));
-            Check(await users.AddPasswordAsync(user, password));
         }
     }
 

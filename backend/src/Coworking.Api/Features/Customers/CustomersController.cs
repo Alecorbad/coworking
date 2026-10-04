@@ -24,7 +24,7 @@ public sealed class CustomersController(CustomersService customers) : Controller
     [ProducesResponseType<CustomerResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<CustomerResponse>> Get(int id) =>
-        (await customers.GetAsync(id)).Match<ActionResult<CustomerResponse>>(c => Ok(c), error => this.ToProblem(error));
+        this.OkOrProblem(await customers.GetAsync(id));
 
     /// <summary>Registra un cliente.</summary>
     [HttpPost]
@@ -42,7 +42,7 @@ public sealed class CustomersController(CustomersService customers) : Controller
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
     public async Task<ActionResult<CustomerResponse>> Update(int id, UpdateCustomerRequest request) =>
-        (await customers.UpdateAsync(id, request)).Match<ActionResult<CustomerResponse>>(c => Ok(c), error => this.ToProblem(error));
+        this.OkOrProblem(await customers.UpdateAsync(id, request));
 
     /// <summary>Cancella un cliente senza prenotazioni.</summary>
     [HttpDelete("{id:int}")]

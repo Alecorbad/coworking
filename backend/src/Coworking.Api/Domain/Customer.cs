@@ -20,8 +20,5 @@ public sealed class Customer
     /// <summary>Istante della registrazione, in UTC; lo decide il server.</summary>
     public DateTimeOffset RegisteredAt { get; set; }
 
-    /// <summary>Colonna di sistema xmin di PostgreSQL: cambia a ogni modifica della riga.</summary>
-    public uint Version { get; set; }
-
     public static string NormalizeEmail(string email) => email.Trim().ToLowerInvariant();
 }

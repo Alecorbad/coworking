@@ -1,0 +1,3 @@
+[*.cs]
+# Scritte da dotnet ef. Qui la regola arriva anche nell'immagine Docker con COPY src/.
+generated_code = true

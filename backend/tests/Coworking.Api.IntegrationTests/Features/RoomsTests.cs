@@ -39,11 +39,11 @@ public sealed class RoomsTests(ApiFactory factory)
     }
 
     [Fact]
-    public async Task Create_Returns409_WhenNameDiffersOnlyByCase()
+    public async Task Create_Returns409_WhenNameIsTaken()
     {
         var client = await factory.CreateAuthenticatedClientAsync();
 
-        var response = await client.PostAsJsonAsync("/api/rooms", Valid("sala ALFA"), Ct);
+        var response = await client.PostAsJsonAsync("/api/rooms", Valid("Sala Alfa"), Ct);
 
         await ProblemAssert.IsProblemAsync(response, HttpStatusCode.Conflict, "ROOM_NAME_TAKEN");
     }
@@ -88,7 +88,7 @@ public sealed class RoomsTests(ApiFactory factory)
     }
 
     [Fact]
-    public async Task Update_DeactivatesRoom_AndChangesVersion()
+    public async Task Update_DeactivatesRoom()
     {
         var client = await factory.CreateAuthenticatedClientAsync();
         var room = await CreateAsync(client);
@@ -99,23 +99,6 @@ public sealed class RoomsTests(ApiFactory factory)
         var updated = await response.Content.ReadFromJsonAsync<RoomResponse>(Ct);
         Assert.NotNull(updated);
         Assert.False(updated.IsActive);
-        Assert.NotEqual(room.Version, updated.Version);
-    }
-
-    [Fact]
-    public async Task Update_Returns409_WhenAnotherOperatorSavedFirst()
-    {
-        var client = await factory.CreateAuthenticatedClientAsync();
-        var room = await CreateAsync(client);
-
-        // Due operatori partono dalla stessa version: il primo salva, il secondo arriva tardi.
-        var first = await client.PutAsJsonAsync($"/api/rooms/{room.Id}", ToUpdate(room) with { Capacity = 7 }, Ct);
-        var second = await client.PutAsJsonAsync($"/api/rooms/{room.Id}", ToUpdate(room) with { Capacity = 9 }, Ct);
-
-        first.EnsureSuccessStatusCode();
-        await ProblemAssert.IsProblemAsync(second, HttpStatusCode.Conflict, "CONCURRENT_UPDATE");
-        var stored = await client.GetFromJsonAsync<RoomResponse>($"/api/rooms/{room.Id}", Ct);
-        Assert.Equal(7, stored!.Capacity);
     }
 
     [Fact]
@@ -130,13 +113,13 @@ public sealed class RoomsTests(ApiFactory factory)
     }
 
     [Fact]
-    public async Task Update_KeepsOwnName_WhenOnlyTheCaseChanges()
+    public async Task Update_Succeeds_WhenTheRoomKeepsItsOwnName()
     {
         var client = await factory.CreateAuthenticatedClientAsync();
         var room = await CreateAsync(client);
 
         var response = await client.PutAsJsonAsync(
-            $"/api/rooms/{room.Id}", ToUpdate(room) with { Name = room.Name.ToUpperInvariant() }, Ct);
+            $"/api/rooms/{room.Id}", ToUpdate(room) with { Capacity = 8 }, Ct);
 
         response.EnsureSuccessStatusCode();
     }
@@ -164,7 +147,7 @@ public sealed class RoomsTests(ApiFactory factory)
         var request = new HttpRequestMessage(new HttpMethod(method), "/api/rooms/999999");
         if (method == "PUT")
         {
-            request.Content = JsonContent.Create(new UpdateRoomRequest(UniqueName(), 4, new(9, 0), new(18, 0), true, 0));
+            request.Content = JsonContent.Create(new UpdateRoomRequest(UniqueName(), 4, new(9, 0), new(18, 0), true));
         }
 
         var response = await client.SendAsync(request, Ct);
@@ -177,7 +160,7 @@ public sealed class RoomsTests(ApiFactory factory)
     private static CreateRoomRequest Valid(string name) => new(name, 6, new(9, 0), new(18, 30));
 
     private static UpdateRoomRequest ToUpdate(RoomResponse room) =>
-        new(room.Name, room.Capacity, room.OpeningTime, room.ClosingTime, room.IsActive, room.Version);
+        new(room.Name, room.Capacity, room.OpeningTime, room.ClosingTime, room.IsActive);
 
     private static async Task<RoomResponse> CreateAsync(HttpClient client)
     {

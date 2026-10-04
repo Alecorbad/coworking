@@ -1,7 +1,7 @@
 // Ruolo:   regole delle sale: elenco, creazione, modifica, disattivazione, cancellazione
 // Riceve:  richieste già validate nella forma dal controller
 // Produce: Result<RoomResponse> (o di un elenco); errori attesi come ApiError
-// Regola:  la modifica parte dalla version letta dal client: se la riga è cambiata, 409
+// Regola:  nome unico (409 ROOM_NAME_TAKEN); con prenotazioni non si cancella (409 HAS_BOOKINGS)
 // Vedi:    Features/Rooms/RoomsController.cs, Infrastructure/Configurations/RoomConfiguration.cs
 
 using Coworking.Api.Common;
@@ -13,7 +13,7 @@ namespace Coworking.Api.Features.Rooms;
 
 public sealed class RoomsService(AppDbContext db)
 {
-    private const string NameIndex = "ix_rooms_normalized_name";
+    private const string NameIndex = "ix_rooms_name";
 
     /// <summary>Tutte le sale, anche disattivate: l'interfaccia mostra lo stato accanto al nome.</summary>
     public async Task<IReadOnlyList<RoomResponse>> ListAsync() =>
@@ -22,7 +22,7 @@ public sealed class RoomsService(AppDbContext db)
     public async Task<Result<RoomResponse>> GetAsync(int id) =>
         await db.Rooms.AsNoTracking().FirstOrDefaultAsync(r => r.Id == id) is { } room
             ? RoomResponse.From(room)
-            : NotFound(id);
+            : Errors.NotFound("Room", id);
 
     public async Task<Result<RoomResponse>> CreateAsync(CreateRoomRequest request)
     {
@@ -34,13 +34,12 @@ public sealed class RoomsService(AppDbContext db)
 
         if (await NameTakenAsync(name, exceptId: null))
         {
-            return NameTaken(name);
+            return Errors.RoomNameTaken(name);
         }
 
         var room = new Room
         {
             Name = name,
-            NormalizedName = Room.Normalize(name),
             Capacity = request.Capacity,
             OpeningTime = request.OpeningTime,
             ClosingTime = request.ClosingTime,
@@ -60,19 +59,15 @@ public sealed class RoomsService(AppDbContext db)
         var room = await db.Rooms.FirstOrDefaultAsync(r => r.Id == id);
         if (room is null)
         {
-            return NotFound(id);
+            return Errors.NotFound("Room", id);
         }
 
         if (await NameTakenAsync(name, exceptId: id))
         {
-            return NameTaken(name);
+            return Errors.RoomNameTaken(name);
         }
 
-        // La version del client diventa il valore «originale»: l'UPDATE ha WHERE xmin = version,
-        // e se nel frattempo un altro operatore ha salvato non tocca nessuna riga.
-        db.Entry(room).Property(r => r.Version).OriginalValue = request.Version;
         room.Name = name;
-        room.NormalizedName = Room.Normalize(name);
         room.Capacity = request.Capacity;
         room.OpeningTime = request.OpeningTime;
         room.ClosingTime = request.ClosingTime;
@@ -81,13 +76,18 @@ public sealed class RoomsService(AppDbContext db)
     }
 
     /// <summary>
-    /// Cancella una sala senza prenotazioni. Con prenotazioni la risposta sarà 409 HAS_BOOKINGS
-    /// (le prenotazioni arrivano con la loro feature): l'alternativa è disattivarla.
+    /// Cancella una sala senza prenotazioni, nemmeno annullate: lo storico non deve perdere il
+    /// riferimento. Con prenotazioni 409 HAS_BOOKINGS; l'alternativa è disattivarla.
     /// </summary>
     public async Task<Result<bool>> DeleteAsync(int id)
     {
+        if (await db.Bookings.AnyAsync(b => b.RoomId == id))
+        {
+            return Errors.HasBookings("Room", id);
+        }
+
         var deleted = await db.Rooms.Where(r => r.Id == id).ExecuteDeleteAsync();
-        return deleted == 0 ? NotFound(id) : true;
+        return deleted == 0 ? Errors.NotFound("Room", id) : true;
     }
 
     /// <summary>Apertura prima della chiusura, entrambe a passi di mezz'ora (le celle della griglia).</summary>
@@ -97,15 +97,11 @@ public sealed class RoomsService(AppDbContext db)
 
         return closing > opening && OnHalfHour(opening) && OnHalfHour(closing)
             ? null
-            : new ApiError(ErrorKind.Validation, "INVALID_OPENING_HOURS",
-                "Closing time must follow opening time, both on the hour or half hour.");
+            : Errors.InvalidOpeningHours;
     }
 
-    private Task<bool> NameTakenAsync(string name, int? exceptId)
-    {
-        var normalized = Room.Normalize(name);
-        return db.Rooms.AnyAsync(r => r.Id != exceptId && r.NormalizedName == normalized);
-    }
+    private Task<bool> NameTakenAsync(string name, int? exceptId) =>
+        db.Rooms.AnyAsync(r => r.Id != exceptId && r.Name == name);
 
     private async Task<Result<RoomResponse>> SaveAsync(Room room, string name)
     {
@@ -114,19 +110,9 @@ public sealed class RoomsService(AppDbContext db)
             await db.SaveChangesAsync();
             return RoomResponse.From(room);
         }
-        catch (DbUpdateConcurrencyException)
+        catch (DbUpdateException exception) when (exception.IsViolationOf(NameIndex))
         {
-            return new ApiError(ErrorKind.Conflict, "CONCURRENT_UPDATE",
-                $"Room {room.Id} was changed by someone else after it was read.");
-        }
-        catch (DbUpdateException exception) when (exception.IsUniqueViolation(NameIndex))
-        {
-            return NameTaken(name);
+            return Errors.RoomNameTaken(name);
         }
     }
-
-    private static ApiError NotFound(int id) => new(ErrorKind.NotFound, "NOT_FOUND", $"Room {id} does not exist.");
-
-    private static ApiError NameTaken(string name) =>
-        new(ErrorKind.Conflict, "ROOM_NAME_TAKEN", $"A room named '{name}' already exists.");
 }

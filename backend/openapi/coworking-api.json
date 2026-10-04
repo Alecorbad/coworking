@@ -5,26 +5,6 @@
     "version": "1.0.0"
   },
   "paths": {
-    "/api/settings": {
-      "get": {
-        "tags": [
-          "Settings"
-        ],
-        "summary": "Restituisce il fuso orario del coworking.",
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SettingsResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/rooms": {
       "get": {
         "tags": [
@@ -511,6 +491,253 @@
         }
       }
     },
+    "/api/bookings": {
+      "get": {
+        "tags": [
+          "Bookings"
+        ],
+        "summary": "Prenotazioni che intersecano la fascia [from, to), annullate comprese, al massimo 31 giorni.\nInsieme all'elenco delle sale basta a disegnare la griglia della disponibilità.",
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BookingResponse"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Bookings"
+        ],
+        "summary": "Prenota una sala per un cliente.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBookingRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBookingRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBookingRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bookings/{id}": {
+      "get": {
+        "tags": [
+          "Bookings"
+        ],
+        "summary": "Legge una prenotazione.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bookings/{id}/cancel": {
+      "post": {
+        "tags": [
+          "Bookings"
+        ],
+        "summary": "Annulla una prenotazione non ancora cominciata; resta visibile come Cancelled.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/customers/{customerId}/bookings": {
+      "get": {
+        "tags": [
+          "Bookings"
+        ],
+        "summary": "Tutte le prenotazioni di un cliente, annullate comprese.",
+        "parameters": [
+          {
+            "name": "customerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BookingResponse"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/auth/login": {
       "post": {
         "tags": [
@@ -627,6 +854,123 @@
   },
   "components": {
     "schemas": {
+      "BookingResponse": {
+        "required": [
+          "id",
+          "customerId",
+          "customerName",
+          "roomId",
+          "roomName",
+          "startsAt",
+          "endsAt",
+          "attendees",
+          "status",
+          "createdAt",
+          "cancelledAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Identificativo della prenotazione.",
+            "format": "int32"
+          },
+          "customerId": {
+            "type": "integer",
+            "description": "Cliente che ha prenotato.",
+            "format": "int32"
+          },
+          "customerName": {
+            "type": "string",
+            "description": "Nome e cognome del cliente, per mostrarli senza un'altra richiesta."
+          },
+          "roomId": {
+            "type": "integer",
+            "description": "Sala prenotata.",
+            "format": "int32"
+          },
+          "roomName": {
+            "type": "string",
+            "description": "Nome della sala, per mostrarlo senza un'altra richiesta."
+          },
+          "startsAt": {
+            "type": "string",
+            "description": "Inizio, in UTC.",
+            "format": "date-time"
+          },
+          "endsAt": {
+            "type": "string",
+            "description": "Fine esclusa, in UTC.",
+            "format": "date-time"
+          },
+          "attendees": {
+            "type": "integer",
+            "description": "Partecipanti.",
+            "format": "int32"
+          },
+          "status": {
+            "description": "Confirmed oppure Cancelled: le annullate restano visibili.",
+            "$ref": "#/components/schemas/BookingStatus"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Istante della registrazione, in UTC.",
+            "format": "date-time"
+          },
+          "cancelledAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Istante dell'annullamento, null se confermata.",
+            "format": "date-time"
+          }
+        }
+      },
+      "BookingStatus": {
+        "enum": [
+          "Confirmed",
+          "Cancelled"
+        ],
+        "description": "Una prenotazione non si cancella: si annulla e resta visibile nello storico."
+      },
+      "CreateBookingRequest": {
+        "required": [
+          "customerId",
+          "roomId",
+          "startsAt",
+          "endsAt",
+          "attendees"
+        ],
+        "type": "object",
+        "properties": {
+          "customerId": {
+            "type": "integer",
+            "description": "Cliente che prenota.",
+            "format": "int32"
+          },
+          "roomId": {
+            "type": "integer",
+            "description": "Sala prenotata; deve essere attiva.",
+            "format": "int32"
+          },
+          "startsAt": {
+            "type": "string",
+            "description": "Inizio, con fuso (ISO 8601), a passi di mezz'ora nell'ora del coworking.",
+            "format": "date-time"
+          },
+          "endsAt": {
+            "type": "string",
+            "description": "Fine esclusa, dopo l'inizio, nello stesso giorno e dentro gli orari della sala.",
+            "format": "date-time"
+          },
+          "attendees": {
+            "type": "integer",
+            "description": "Partecipanti, al massimo la capienza della sala.",
+            "format": "int32"
+          }
+        }
+      },
       "CreateCustomerRequest": {
         "required": [
           "firstName",
@@ -660,7 +1004,7 @@
         "properties": {
           "name": {
             "type": "string",
-            "description": "Nome mostrato nella griglia; unico senza distinguere maiuscole."
+            "description": "Nome mostrato nella griglia; unico."
           },
           "capacity": {
             "type": "integer",
@@ -685,8 +1029,7 @@
           "firstName",
           "lastName",
           "email",
-          "registeredAt",
-          "version"
+          "registeredAt"
         ],
         "type": "object",
         "properties": {
@@ -711,11 +1054,6 @@
             "type": "string",
             "description": "Istante della registrazione, in UTC.",
             "format": "date-time"
-          },
-          "version": {
-            "type": "integer",
-            "description": "Da rimandare nella modifica: rivela se un altro operatore ha salvato prima.",
-            "format": "uint32"
           }
         }
       },
@@ -789,8 +1127,7 @@
           "capacity",
           "openingTime",
           "closingTime",
-          "isActive",
-          "version"
+          "isActive"
         ],
         "type": "object",
         "properties": {
@@ -821,23 +1158,6 @@
           "isActive": {
             "type": "boolean",
             "description": "false se la sala non accetta nuove prenotazioni."
-          },
-          "version": {
-            "type": "integer",
-            "description": "Da rimandare nella modifica: rivela se un altro operatore ha salvato prima.",
-            "format": "uint32"
-          }
-        }
-      },
-      "SettingsResponse": {
-        "required": [
-          "timeZone"
-        ],
-        "type": "object",
-        "properties": {
-          "timeZone": {
-            "type": "string",
-            "description": "Fuso IANA in cui il frontend mostra tutti gli orari."
           }
         }
       },
@@ -845,8 +1165,7 @@
         "required": [
           "firstName",
           "lastName",
-          "email",
-          "version"
+          "email"
         ],
         "type": "object",
         "properties": {
@@ -861,11 +1180,6 @@
           "email": {
             "type": "string",
             "description": "Unica senza distinguere maiuscole; si salva in minuscolo."
-          },
-          "version": {
-            "type": "integer",
-            "description": "La version letta insieme al cliente: se nel frattempo è cambiata, la modifica viene rifiutata.",
-            "format": "uint32"
           }
         }
       },
@@ -875,14 +1189,13 @@
           "capacity",
           "openingTime",
           "closingTime",
-          "isActive",
-          "version"
+          "isActive"
         ],
         "type": "object",
         "properties": {
           "name": {
             "type": "string",
-            "description": "Nome mostrato nella griglia; unico senza distinguere maiuscole."
+            "description": "Nome mostrato nella griglia; unico."
           },
           "capacity": {
             "type": "integer",
@@ -902,11 +1215,6 @@
           "isActive": {
             "type": "boolean",
             "description": "false disattiva la sala: niente nuove prenotazioni, le esistenti restano."
-          },
-          "version": {
-            "type": "integer",
-            "description": "La version letta insieme alla sala: se nel frattempo è cambiata, la modifica viene rifiutata.",
-            "format": "uint32"
           }
         }
       }
@@ -914,13 +1222,13 @@
   },
   "tags": [
     {
-      "name": "Settings"
-    },
-    {
       "name": "Rooms"
     },
     {
       "name": "Customers"
+    },
+    {
+      "name": "Bookings"
     },
     {
       "name": "Auth"

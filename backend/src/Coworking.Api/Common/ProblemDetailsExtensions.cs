@@ -10,6 +10,10 @@ namespace Coworking.Api.Common;
 
 public static class ProblemDetailsExtensions
 {
+    /// <summary>200 con il valore, oppure l'errore come ProblemDetails: la traduzione di ogni Result.</summary>
+    public static ActionResult<T> OkOrProblem<T>(this ControllerBase controller, Result<T> result) =>
+        result.Match<ActionResult<T>>(value => controller.Ok(value), error => controller.ToProblem(error));
+
     /// <summary>
     /// Traduce un errore dei service in ProblemDetails RFC 9457 con il `code` come estensione.
     /// traceId lo aggiunge la factory di MVC.
@@ -34,13 +38,12 @@ public static class ProblemDetailsExtensions
 
     /// <summary>
     /// Codice di ripiego per le risposte d'errore che non nascono da un Result: validazione
-    /// automatica di [ApiController], 401/403/404 senza corpo, eccezioni impreviste.
+    /// automatica di [ApiController], 401/404 senza corpo, eccezioni impreviste.
     /// </summary>
     public static string? DefaultCode(int? status) => status switch
     {
         StatusCodes.Status400BadRequest => "VALIDATION_FAILED",
         StatusCodes.Status401Unauthorized => "UNAUTHENTICATED",
-        StatusCodes.Status403Forbidden => "FORBIDDEN",
         StatusCodes.Status404NotFound => "NOT_FOUND",
         StatusCodes.Status500InternalServerError => "INTERNAL_ERROR",
         _ => null,

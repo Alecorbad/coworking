@@ -20,7 +20,69 @@ namespace Coworking.Api.Infrastructure.Migrations
                 .HasAnnotation("ProductVersion", "10.0.12")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
+            NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "btree_gist");
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
+
+            modelBuilder.Entity("Coworking.Api.Domain.Booking", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                    NpgsqlPropertyBuilderExtensions.HasIdentityOptions(b.Property<int>("Id"), 100L, null, null, null, null, null);
+
+                    b.Property<int>("Attendees")
+                        .HasColumnType("integer")
+                        .HasColumnName("attendees");
+
+                    b.Property<DateTimeOffset?>("CancelledAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("cancelled_at");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<int>("CustomerId")
+                        .HasColumnType("integer")
+                        .HasColumnName("customer_id");
+
+                    b.Property<DateTimeOffset>("EndsAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("ends_at");
+
+                    b.Property<int>("RoomId")
+                        .HasColumnType("integer")
+                        .HasColumnName("room_id");
+
+                    b.Property<DateTimeOffset>("StartsAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("starts_at");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("status");
+
+                    b.HasKey("Id")
+                        .HasName("pk_bookings");
+
+                    b.HasIndex("CustomerId")
+                        .HasDatabaseName("ix_bookings_customer_id");
+
+                    b.HasIndex("RoomId")
+                        .HasDatabaseName("ix_bookings_room_id");
+
+                    b.ToTable("bookings", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_bookings_attendees", "attendees > 0");
+
+                            t.HasCheckConstraint("ck_bookings_time_range", "ends_at > starts_at");
+                        });
+                });
 
             modelBuilder.Entity("Coworking.Api.Domain.Customer", b =>
                 {
@@ -54,12 +116,6 @@ namespace Coworking.Api.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("registered_at");
 
-                    b.Property<uint>("Version")
-                        .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("xid")
-                        .HasColumnName("xmin");
-
                     b.HasKey("Id")
                         .HasName("pk_customers");
 
@@ -76,8 +132,7 @@ namespace Coworking.Api.Infrastructure.Migrations
                             Email = "giulia.bianchi@example.com",
                             FirstName = "Giulia",
                             LastName = "Bianchi",
-                            RegisteredAt = new DateTimeOffset(new DateTime(2026, 9, 1, 8, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
-                            Version = 0u
+                            RegisteredAt = new DateTimeOffset(new DateTime(2026, 9, 1, 8, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0))
                         },
                         new
                         {
@@ -85,8 +140,7 @@ namespace Coworking.Api.Infrastructure.Migrations
                             Email = "marco.rossi@example.com",
                             FirstName = "Marco",
                             LastName = "Rossi",
-                            RegisteredAt = new DateTimeOffset(new DateTime(2026, 9, 1, 8, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
-                            Version = 0u
+                            RegisteredAt = new DateTimeOffset(new DateTime(2026, 9, 1, 8, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0))
                         },
                         new
                         {
@@ -94,8 +148,7 @@ namespace Coworking.Api.Infrastructure.Migrations
                             Email = "sara.conti@example.com",
                             FirstName = "Sara",
                             LastName = "Conti",
-                            RegisteredAt = new DateTimeOffset(new DateTime(2026, 9, 4, 8, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
-                            Version = 0u
+                            RegisteredAt = new DateTimeOffset(new DateTime(2026, 9, 4, 8, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0))
                         },
                         new
                         {
@@ -103,8 +156,7 @@ namespace Coworking.Api.Infrastructure.Migrations
                             Email = "luca.ferrari@example.com",
                             FirstName = "Luca",
                             LastName = "Ferrari",
-                            RegisteredAt = new DateTimeOffset(new DateTime(2026, 9, 11, 8, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
-                            Version = 0u
+                            RegisteredAt = new DateTimeOffset(new DateTime(2026, 9, 11, 8, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0))
                         },
                         new
                         {
@@ -112,8 +164,7 @@ namespace Coworking.Api.Infrastructure.Migrations
                             Email = "elena.romano@example.com",
                             FirstName = "Elena",
                             LastName = "Romano",
-                            RegisteredAt = new DateTimeOffset(new DateTime(2026, 9, 15, 8, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
-                            Version = 0u
+                            RegisteredAt = new DateTimeOffset(new DateTime(2026, 9, 15, 8, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0))
                         });
                 });
 
@@ -145,28 +196,16 @@ namespace Coworking.Api.Infrastructure.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("name");
 
-                    b.Property<string>("NormalizedName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("normalized_name");
-
                     b.Property<TimeOnly>("OpeningTime")
                         .HasColumnType("time without time zone")
                         .HasColumnName("opening_time");
 
-                    b.Property<uint>("Version")
-                        .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("xid")
-                        .HasColumnName("xmin");
-
                     b.HasKey("Id")
                         .HasName("pk_rooms");
 
-                    b.HasIndex("NormalizedName")
+                    b.HasIndex("Name")
                         .IsUnique()
-                        .HasDatabaseName("ix_rooms_normalized_name");
+                        .HasDatabaseName("ix_rooms_name");
 
                     b.ToTable("rooms", null, t =>
                         {
@@ -183,9 +222,7 @@ namespace Coworking.Api.Infrastructure.Migrations
                             ClosingTime = new TimeOnly(20, 0, 0),
                             IsActive = true,
                             Name = "Sala Alfa",
-                            NormalizedName = "SALA ALFA",
-                            OpeningTime = new TimeOnly(8, 0, 0),
-                            Version = 0u
+                            OpeningTime = new TimeOnly(8, 0, 0)
                         },
                         new
                         {
@@ -194,9 +231,7 @@ namespace Coworking.Api.Infrastructure.Migrations
                             ClosingTime = new TimeOnly(20, 0, 0),
                             IsActive = true,
                             Name = "Sala Beta",
-                            NormalizedName = "SALA BETA",
-                            OpeningTime = new TimeOnly(8, 0, 0),
-                            Version = 0u
+                            OpeningTime = new TimeOnly(8, 0, 0)
                         },
                         new
                         {
@@ -205,9 +240,7 @@ namespace Coworking.Api.Infrastructure.Migrations
                             ClosingTime = new TimeOnly(18, 0, 0),
                             IsActive = true,
                             Name = "Sala Gamma",
-                            NormalizedName = "SALA GAMMA",
-                            OpeningTime = new TimeOnly(9, 0, 0),
-                            Version = 0u
+                            OpeningTime = new TimeOnly(9, 0, 0)
                         },
                         new
                         {
@@ -216,9 +249,7 @@ namespace Coworking.Api.Infrastructure.Migrations
                             ClosingTime = new TimeOnly(18, 0, 0),
                             IsActive = true,
                             Name = "Sala Delta",
-                            NormalizedName = "SALA DELTA",
-                            OpeningTime = new TimeOnly(9, 0, 0),
-                            Version = 0u
+                            OpeningTime = new TimeOnly(9, 0, 0)
                         },
                         new
                         {
@@ -227,9 +258,7 @@ namespace Coworking.Api.Infrastructure.Migrations
                             ClosingTime = new TimeOnly(13, 0, 0),
                             IsActive = false,
                             Name = "Sala Epsilon",
-                            NormalizedName = "SALA EPSILON",
-                            OpeningTime = new TimeOnly(9, 0, 0),
-                            Version = 0u
+                            OpeningTime = new TimeOnly(9, 0, 0)
                         });
                 });
 
@@ -394,6 +423,27 @@ namespace Coworking.Api.Infrastructure.Migrations
                         .HasName("pk_asp_net_user_tokens");
 
                     b.ToTable("AspNetUserTokens", (string)null);
+                });
+
+            modelBuilder.Entity("Coworking.Api.Domain.Booking", b =>
+                {
+                    b.HasOne("Coworking.Api.Domain.Customer", "Customer")
+                        .WithMany()
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_bookings_customers_customer_id");
+
+                    b.HasOne("Coworking.Api.Domain.Room", "Room")
+                        .WithMany()
+                        .HasForeignKey("RoomId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_bookings_rooms_room_id");
+
+                    b.Navigation("Customer");
+
+                    b.Navigation("Room");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>

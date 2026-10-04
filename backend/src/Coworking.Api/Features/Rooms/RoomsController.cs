@@ -24,7 +24,7 @@ public sealed class RoomsController(RoomsService rooms) : ControllerBase
     [ProducesResponseType<RoomResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<RoomResponse>> Get(int id) =>
-        (await rooms.GetAsync(id)).Match<ActionResult<RoomResponse>>(room => Ok(room), error => this.ToProblem(error));
+        this.OkOrProblem(await rooms.GetAsync(id));
 
     /// <summary>Crea una sala, attiva.</summary>
     [HttpPost]
@@ -42,7 +42,7 @@ public sealed class RoomsController(RoomsService rooms) : ControllerBase
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
     public async Task<ActionResult<RoomResponse>> Update(int id, UpdateRoomRequest request) =>
-        (await rooms.UpdateAsync(id, request)).Match<ActionResult<RoomResponse>>(room => Ok(room), error => this.ToProblem(error));
+        this.OkOrProblem(await rooms.UpdateAsync(id, request));
 
     /// <summary>Cancella una sala senza prenotazioni; altrimenti va disattivata.</summary>
     [HttpDelete("{id:int}")]
