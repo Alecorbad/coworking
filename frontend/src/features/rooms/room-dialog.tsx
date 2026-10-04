@@ -1,8 +1,7 @@
 // Ruolo:   modulo della sala, per crearla o modificarla (anche disattivarla)
 // Riceve:  la sala da modificare, oppure nessuna per crearne una
 // Produce: la richiesta all'API; si chiude da sola quando il salvataggio riesce
-// Regola:  la modifica rimanda la version letta all'apertura: se un altro operatore ha salvato
-//          nel frattempo, l'API risponde 409 e il modulo resta aperto con i dati inseriti
+// Regola:  se l'API rifiuta (nome già preso), il modulo resta aperto con i dati inseriti
 // Vedi:    features/rooms/api.ts, features/rooms/room-form.ts
 
 "use client";
@@ -15,17 +14,15 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import FormControlLabel from "@mui/material/FormControlLabel";
-import MenuItem from "@mui/material/MenuItem";
 import Stack from "@mui/material/Stack";
 import Switch from "@mui/material/Switch";
 import TextField from "@mui/material/TextField";
 import { hasFieldError } from "@/lib/api/api-error";
 import { errorMessage } from "@/lib/error-messages";
-import { formatTime, halfHourSlots } from "@/lib/format";
+import { formatTime } from "@/lib/coworking-time";
+import { TimeSelect } from "@/components/ui/time-select";
 import { type Room, useCreateRoom, useUpdateRoom } from "./api";
 import { readRoomForm } from "./room-form";
-
-const slots = halfHourSlots();
 
 export function RoomDialog({ room, onClose }: { room?: Room; onClose: () => void }) {
   const create = useCreateRoom();
@@ -35,7 +32,7 @@ export function RoomDialog({ room, onClose }: { room?: Room; onClose: () => void
   const onSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const { isActive, ...values } = readRoomForm(new FormData(event.currentTarget));
-    if (room) update.mutate({ ...values, isActive, version: room.version }, { onSuccess: onClose });
+    if (room) update.mutate({ ...values, isActive }, { onSuccess: onClose });
     else create.mutate(values, { onSuccess: onClose });
   };
 
@@ -75,32 +72,18 @@ export function RoomDialog({ room, onClose }: { room?: Room; onClose: () => void
               slotProps={{ htmlInput: { min: 1, max: 500, step: 1 } }}
             />
             <Stack direction="row" spacing={4}>
-              <TextField
-                select
+              <TimeSelect
                 name="openingTime"
                 label="Apertura"
                 defaultValue={room ? formatTime(room.openingTime) : "09:00"}
                 required
-              >
-                {slots.map((slot) => (
-                  <MenuItem key={slot} value={slot}>
-                    {slot}
-                  </MenuItem>
-                ))}
-              </TextField>
-              <TextField
-                select
+              />
+              <TimeSelect
                 name="closingTime"
                 label="Chiusura"
                 defaultValue={room ? formatTime(room.closingTime) : "18:00"}
                 required
-              >
-                {slots.map((slot) => (
-                  <MenuItem key={slot} value={slot}>
-                    {slot}
-                  </MenuItem>
-                ))}
-              </TextField>
+              />
             </Stack>
             {room && (
               <FormControlLabel

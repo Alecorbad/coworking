@@ -7,7 +7,13 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+  hashKey,
+  MutationCache,
+  QueryCache,
+  QueryClient,
+  QueryClientProvider,
+} from "@tanstack/react-query";
 import CssBaseline from "@mui/material/CssBaseline";
 import { ThemeProvider } from "@mui/material/styles";
 import { meQueryKey } from "@/features/auth/api";
@@ -20,19 +26,27 @@ function isSessionLost(error: unknown): boolean {
   return error instanceof ApiError && error.status === 401 && error.code !== "INVALID_CREDENTIALS";
 }
 
+export function createQueryClient(): QueryClient {
+  const onError = (error: unknown) => {
+    if (isSessionLost(error)) void client.invalidateQueries({ queryKey: meQueryKey });
+  };
+  const client: QueryClient = new QueryClient({
+    queryCache: new QueryCache({
+      onError: (error, query) => {
+        // Il 401 di me deve restare visibile al gate: invalidarlo qui
+        // rilancerebbe la stessa richiesta e impedirebbe il redirect al login.
+        if (query.queryHash !== hashKey(meQueryKey)) onError(error);
+      },
+    }),
+    mutationCache: new MutationCache({ onError }),
+  });
+  return client;
+}
+
 export function Providers({ children }: { children: ReactNode }) {
   // Un QueryClient per sessione del browser: creato nello stato, non a livello
   // di modulo, per non condividere la cache tra richieste diverse sul server.
-  const [queryClient] = useState(() => {
-    const onError = (error: unknown) => {
-      if (isSessionLost(error)) void client.invalidateQueries({ queryKey: meQueryKey });
-    };
-    const client: QueryClient = new QueryClient({
-      queryCache: new QueryCache({ onError }),
-      mutationCache: new MutationCache({ onError }),
-    });
-    return client;
-  });
+  const [queryClient] = useState(createQueryClient);
 
   return (
     <QueryClientProvider client={queryClient}>

@@ -23,8 +23,7 @@ import { ErrorState } from "@/components/ui/error-state";
 import { LoadingState } from "@/components/ui/loading-state";
 import { type Customer, useCustomers, useDeleteCustomer } from "@/features/customers/api";
 import { CustomerDialog } from "@/features/customers/customer-dialog";
-import { useSettings } from "@/features/settings/api";
-import { formatDate } from "@/lib/format";
+import { formatDate } from "@/lib/coworking-time";
 
 // Finestra aperta: nessuna, nuovo cliente, modifica o cancellazione di un cliente.
 type Open =
@@ -34,7 +33,6 @@ type Open =
 
 export default function CustomersPage() {
   const customers = useCustomers();
-  const settings = useSettings();
   const remove = useDeleteCustomer();
   const [open, setOpen] = useState<Open | null>(null);
 
@@ -81,11 +79,7 @@ export default function CustomersPage() {
                       </Link>
                     </TableCell>
                     <TableCell>{customer.email}</TableCell>
-                    <TableCell>
-                      {settings.isSuccess
-                        ? formatDate(customer.registeredAt, settings.data.timeZone)
-                        : "…"}
-                    </TableCell>
+                    <TableCell>{formatDate(customer.registeredAt)}</TableCell>
                     <TableCell align="right">
                       <Tooltip title="Modifica">
                         <IconButton

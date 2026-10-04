@@ -1,4 +1,4 @@
-import { toTimeOnly } from "@/lib/format";
+import { toTimeOnly } from "@/lib/coworking-time";
 import type { CreateRoom } from "./api";
 
 /** Valori del modulo della sala; isActive c'è solo in modifica. */

@@ -22,7 +22,7 @@ import { ErrorState } from "@/components/ui/error-state";
 import { LoadingState } from "@/components/ui/loading-state";
 import { type Room, useDeleteRoom, useRooms } from "@/features/rooms/api";
 import { RoomDialog } from "@/features/rooms/room-dialog";
-import { formatTime } from "@/lib/format";
+import { formatTime } from "@/lib/coworking-time";
 
 // Finestra aperta: nessuna, nuova sala, modifica o cancellazione di una sala.
 type Open = { kind: "create" } | { kind: "edit"; room: Room } | { kind: "delete"; room: Room };

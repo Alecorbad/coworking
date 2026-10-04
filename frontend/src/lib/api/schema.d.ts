@@ -4,42 +4,6 @@
  */
 
 export interface paths {
-    "/api/settings": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Restituisce il fuso orario del coworking. */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["SettingsResponse"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/rooms": {
         parameters: {
             query?: never;
@@ -480,6 +444,251 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/bookings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Prenotazioni che intersecano la fascia [from, to), annullate comprese, al massimo 31 giorni.
+         *     Insieme all'elenco delle sale basta a disegnare la griglia della disponibilità.
+         */
+        get: {
+            parameters: {
+                query: {
+                    from: string;
+                    to: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["BookingResponse"][];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** Prenota una sala per un cliente. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreateBookingRequest"];
+                    "text/json": components["schemas"]["CreateBookingRequest"];
+                    "application/*+json": components["schemas"]["CreateBookingRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["BookingResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/bookings/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Legge una prenotazione. */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["BookingResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/bookings/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Annulla una prenotazione non ancora cominciata; resta visibile come Cancelled. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["BookingResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/customers/{customerId}/bookings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Tutte le prenotazioni di un cliente, annullate comprese. */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    customerId: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["BookingResponse"][];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/login": {
         parameters: {
             query?: never;
@@ -632,6 +841,86 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        BookingResponse: {
+            /**
+             * Format: int32
+             * @description Identificativo della prenotazione.
+             */
+            id: number;
+            /**
+             * Format: int32
+             * @description Cliente che ha prenotato.
+             */
+            customerId: number;
+            /** @description Nome e cognome del cliente, per mostrarli senza un'altra richiesta. */
+            customerName: string;
+            /**
+             * Format: int32
+             * @description Sala prenotata.
+             */
+            roomId: number;
+            /** @description Nome della sala, per mostrarlo senza un'altra richiesta. */
+            roomName: string;
+            /**
+             * Format: date-time
+             * @description Inizio, in UTC.
+             */
+            startsAt: string;
+            /**
+             * Format: date-time
+             * @description Fine esclusa, in UTC.
+             */
+            endsAt: string;
+            /**
+             * Format: int32
+             * @description Partecipanti.
+             */
+            attendees: number;
+            /** @description Confirmed oppure Cancelled: le annullate restano visibili. */
+            status: components["schemas"]["BookingStatus"];
+            /**
+             * Format: date-time
+             * @description Istante della registrazione, in UTC.
+             */
+            createdAt: string;
+            /**
+             * Format: date-time
+             * @description Istante dell'annullamento, null se confermata.
+             */
+            cancelledAt: null | string;
+        };
+        /**
+         * @description Una prenotazione non si cancella: si annulla e resta visibile nello storico.
+         * @enum {unknown}
+         */
+        BookingStatus: "Confirmed" | "Cancelled";
+        CreateBookingRequest: {
+            /**
+             * Format: int32
+             * @description Cliente che prenota.
+             */
+            customerId: number;
+            /**
+             * Format: int32
+             * @description Sala prenotata; deve essere attiva.
+             */
+            roomId: number;
+            /**
+             * Format: date-time
+             * @description Inizio, con fuso (ISO 8601), a passi di mezz'ora nell'ora del coworking.
+             */
+            startsAt: string;
+            /**
+             * Format: date-time
+             * @description Fine esclusa, dopo l'inizio, nello stesso giorno e dentro gli orari della sala.
+             */
+            endsAt: string;
+            /**
+             * Format: int32
+             * @description Partecipanti, al massimo la capienza della sala.
+             */
+            attendees: number;
+        };
         CreateCustomerRequest: {
             /** @description Nome. */
             firstName: string;
@@ -641,7 +930,7 @@ export interface components {
             email: string;
         };
         CreateRoomRequest: {
-            /** @description Nome mostrato nella griglia; unico senza distinguere maiuscole. */
+            /** @description Nome mostrato nella griglia; unico. */
             name: string;
             /**
              * Format: int32
@@ -676,11 +965,6 @@ export interface components {
              * @description Istante della registrazione, in UTC.
              */
             registeredAt: string;
-            /**
-             * Format: uint32
-             * @description Da rimandare nella modifica: rivela se un altro operatore ha salvato prima.
-             */
-            version: number;
         };
         LoginRequest: {
             email: string;
@@ -723,15 +1007,6 @@ export interface components {
             closingTime: string;
             /** @description false se la sala non accetta nuove prenotazioni. */
             isActive: boolean;
-            /**
-             * Format: uint32
-             * @description Da rimandare nella modifica: rivela se un altro operatore ha salvato prima.
-             */
-            version: number;
-        };
-        SettingsResponse: {
-            /** @description Fuso IANA in cui il frontend mostra tutti gli orari. */
-            timeZone: string;
         };
         UpdateCustomerRequest: {
             /** @description Nome. */
@@ -740,14 +1015,9 @@ export interface components {
             lastName: string;
             /** @description Unica senza distinguere maiuscole; si salva in minuscolo. */
             email: string;
-            /**
-             * Format: uint32
-             * @description La version letta insieme al cliente: se nel frattempo è cambiata, la modifica viene rifiutata.
-             */
-            version: number;
         };
         UpdateRoomRequest: {
-            /** @description Nome mostrato nella griglia; unico senza distinguere maiuscole. */
+            /** @description Nome mostrato nella griglia; unico. */
             name: string;
             /**
              * Format: int32
@@ -766,11 +1036,6 @@ export interface components {
             closingTime: string;
             /** @description false disattiva la sala: niente nuove prenotazioni, le esistenti restano. */
             isActive: boolean;
-            /**
-             * Format: uint32
-             * @description La version letta insieme alla sala: se nel frattempo è cambiata, la modifica viene rifiutata.
-             */
-            version: number;
         };
     };
     responses: never;

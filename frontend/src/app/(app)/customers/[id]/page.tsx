@@ -13,10 +13,11 @@ import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
 import { LoadingState } from "@/components/ui/loading-state";
+import { useCustomerBookings } from "@/features/bookings/api";
+import { BookingsTable } from "@/features/bookings/bookings-table";
 import { useCustomer } from "@/features/customers/api";
 import { CustomerDialog } from "@/features/customers/customer-dialog";
-import { useSettings } from "@/features/settings/api";
-import { formatDate } from "@/lib/format";
+import { formatDate } from "@/lib/coworking-time";
 
 function Field({ label, value }: { label: string; value: string }) {
   return (
@@ -32,7 +33,6 @@ function Field({ label, value }: { label: string; value: string }) {
 export default function CustomerPage() {
   const { id } = useParams<{ id: string }>();
   const customer = useCustomer(Number(id));
-  const settings = useSettings();
   const [editing, setEditing] = useState(false);
 
   const back = (
@@ -72,18 +72,27 @@ export default function CustomerPage() {
         <Paper sx={{ p: 6 }}>
           <Stack direction="row" spacing={8}>
             <Field label="Email" value={c.email} />
-            <Field
-              label="Registrato il"
-              value={settings.isSuccess ? formatDate(c.registeredAt, settings.data.timeZone) : "…"}
-            />
+            <Field label="Registrato il" value={formatDate(c.registeredAt)} />
           </Stack>
         </Paper>
         <Stack spacing={3}>
           <Typography variant="h2">Prenotazioni</Typography>
-          <EmptyState message="Nessuna prenotazione per questo cliente." />
+          <CustomerBookings customerId={c.id} />
         </Stack>
       </Stack>
       {editing && <CustomerDialog customer={c} onClose={() => setEditing(false)} />}
     </>
   );
+}
+
+// Le prenotazioni del cliente, dalla più vecchia, annullate comprese; si annullano da qui.
+function CustomerBookings({ customerId }: { customerId: number }) {
+  const bookings = useCustomerBookings(customerId);
+
+  if (bookings.isPending) return <LoadingState />;
+  if (bookings.isError)
+    return <ErrorState error={bookings.error} onRetry={() => void bookings.refetch()} />;
+  if (bookings.data.length === 0)
+    return <EmptyState message="Nessuna prenotazione per questo cliente." />;
+  return <BookingsTable bookings={bookings.data} showCustomer={false} />;
 }

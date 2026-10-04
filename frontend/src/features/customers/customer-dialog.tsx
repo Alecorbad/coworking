@@ -1,8 +1,7 @@
 // Ruolo:   modulo del cliente, per registrarlo o modificarlo
 // Riceve:  il cliente da modificare, oppure nessuno per registrarne uno
 // Produce: la richiesta all'API; si chiude da sola quando il salvataggio riesce
-// Regola:  la modifica rimanda la version letta all'apertura: se un altro operatore ha salvato
-//          nel frattempo, l'API risponde 409 e il modulo resta aperto con i dati inseriti
+// Regola:  se l'API rifiuta (email già presa), il modulo resta aperto con i dati inseriti
 // Vedi:    features/customers/api.ts
 
 "use client";
@@ -39,7 +38,7 @@ export function CustomerDialog({
       lastName: String(form.get("lastName") ?? ""),
       email: String(form.get("email") ?? ""),
     };
-    if (customer) update.mutate({ ...values, version: customer.version }, { onSuccess: onClose });
+    if (customer) update.mutate(values, { onSuccess: onClose });
     else create.mutate(values, { onSuccess: onClose });
   };
 
