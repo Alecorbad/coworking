@@ -15,7 +15,7 @@ Clienti, sale e prenotazioni in un solo posto, senza sovrapposizioni.
 
 [Avvio rapido](#avvio-rapido) ·
 [Come è fatto](#come-è-fatto) ·
-[I sette nuclei](#i-sette-nuclei) ·
+[Gli otto nuclei](#gli-otto-nuclei) ·
 [Dove sta cosa](#dove-sta-cosa) ·
 [Studiare il progetto](#studiare-il-progetto) ·
 [Scelte note](#scelte-e-limiti-noti) ·
@@ -42,7 +42,7 @@ Clienti, sale e prenotazioni in un solo posto, senza sovrapposizioni.
 | Parte | Stato |
 |---|---|
 | Accesso della receptionist, gestione errori, struttura dell'interfaccia, tema chiaro e scuro | pronto |
-| Sale e clienti | in arrivo |
+| Sale e clienti: elenco, modifica, disattivazione delle sale, modifiche concorrenti | pronto |
 | Prenotazioni e disponibilità | in arrivo |
 
 ---
@@ -165,7 +165,8 @@ Un capitolo alla volta: **schema → regola → codice → quiz → approfondime
 1. **Orientati:** segui [il cammino di una richiesta](#il-cammino-di-una-richiesta), dal browser al database.
 2. **Capisci il comportamento:** leggi [errori](#1-flusso-degli-errori), [accesso](#3-accesso-e-sessione) e [pipeline](#4-pipeline-http), poi apri i file citati.
 3. **Collega i livelli:** passa al [contratto API](#5-contratto-dellapi), allo [stile](#6-stile) e agli [stati dell'interfaccia](#7-struttura-e-stati-dellinterfaccia).
-4. **Mettiti alla prova:** spiega un caso concreto senza guardare il codice; usa il quiz locale se disponibile, poi approfondisci il punto che ti manca.
+4. **Segui una feature con i dati:** [sale e clienti](#8-sale-e-clienti-dati-condivisi) mostrano unicità, modifiche concorrenti e moduli.
+5. **Mettiti alla prova:** spiega un caso concreto senza guardare il codice; usa il quiz locale se disponibile, poi approfondisci il punto che ti manca.
 
 - **Risorse vicino al concetto:** ogni capitolo offre letture o video con un obiettivo concreto. Parti dalla prima risorsa, apri le altre quando ti servono.
 - **Versioni:** le guide Microsoft puntano a ASP.NET Core 10 e PostgreSQL a 18; per gli altri strumenti confronta gli esempi con le versioni bloccate nei file di dipendenze.
@@ -174,7 +175,7 @@ Un capitolo alla volta: **schema → regola → codice → quiz → approfondime
 
 ---
 
-## I sette nuclei
+## Gli otto nuclei
 
 Sono i punti da cui dipende il resto: capiti questi, ogni nuova funzione è una variazione. Ogni file
 centrale ha in testa una scheda di cinque righe (**Ruolo, Riceve, Produce, Regola, Vedi**) che dice la
@@ -189,6 +190,7 @@ stessa cosa in piccolo.
 | 5 | [Contratto dell'API](#5-contratto-dellapi) | il backend descrive l'API, il frontend ne deriva i tipi | `openapi/`, `schema.d.ts` |
 | 6 | [Stile](#6-stile) | un solo posto per colori, misure e componenti | `theme/` |
 | 7 | [Struttura e stati dell'interfaccia](#7-struttura-e-stati-dellinterfaccia) | ogni pagina ha caricamento, vuoto, errore e sessione persa | `app-shell.tsx`, `ui/` |
+| 8 | [Sale e clienti: dati condivisi](#8-sale-e-clienti-dati-condivisi) | chi salva per secondo su dati vecchi riceve un 409, non sovrascrive | `Features/Rooms/`, `Features/Customers/` |
 
 ### 1. Flusso degli errori
 
@@ -344,6 +346,43 @@ flowchart LR
 - **TanStack Query 5 · guida, EN:** [Queries](https://tanstack.com/query/v5/docs/framework/react/guides/queries) — collega caricamento, successo ed errore agli hook di `features/`.
 - **Fireship · YouTube, EN:** [React in 100 Seconds](https://www.youtube.com/watch?v=Tn6-PIqc4UM) — ripassa componenti, props e stato prima di leggere gli hook; usa React Learn per le API attuali.
 
+### 8. Sale e clienti: dati condivisi
+
+- **Ruolo:** sale e clienti sono la prima feature con dati propri: elenco, creazione, modifica e cancellazione, in `Features/Rooms/` e `Features/Customers/` (le regole stanno in [`RoomsService.cs`](backend/src/Coworking.Api/Features/Rooms/RoomsService.cs) e [`CustomersService.cs`](backend/src/Coworking.Api/Features/Customers/CustomersService.cs)), con le pagine in `app/(app)/rooms/` e `app/(app)/customers/`.
+- **Regola, modifiche concorrenti:** ogni risposta porta `version` (la colonna di sistema `xmin` di PostgreSQL); la modifica la rimanda e l'`UPDATE` vale solo se la riga non è cambiata. Altrimenti 409 `CONCURRENT_UPDATE`: chi arriva secondo non sovrascrive senza saperlo.
+- **Regola, unicità:** nome della sala ed email del cliente sono unici senza distinguere maiuscole. L'email si salva in minuscolo; il nome si conserva come scritto e accanto c'è `normalized_name` in maiuscolo. Su entrambe un indice unico ferma anche due richieste identiche nello stesso istante (409 `ROOM_NAME_TAKEN`, `EMAIL_TAKEN`).
+- **Regola, sale disattivate:** una sala disattivata resta nell'elenco con l'etichetta «Disattivata» e non accetterà nuove prenotazioni; le esistenti restano. Si cancella solo ciò che non ha prenotazioni (409 `HAS_BOOKINGS`, effettivo con le prenotazioni).
+- **Frontend:** dopo un salvataggio, riuscito o respinto con 409, l'elenco si rilegge. I moduli leggono i campi con `FormData`; gli errori per campo del backend accendono il campo con un aiuto in italiano.
+- **Dati iniziali:** cinque sale (una disattivata) e cinque clienti arrivano con le migration ([`SeedData.cs`](backend/src/Coworking.Api/Infrastructure/SeedData.cs)).
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant A as Operatore A
+    participant B as Operatore B
+    participant API as RoomsService
+    participant D as PostgreSQL
+
+    A->>API: GET /api/rooms/2
+    API-->>A: Sala Beta, version 870
+    B->>API: GET /api/rooms/2
+    API-->>B: Sala Beta, version 870
+    A->>API: PUT capienza 7, version 870
+    API->>D: UPDATE ... WHERE id = 2 AND xmin = 870
+    D-->>API: 1 riga, xmin ora 871
+    API-->>A: 200, version 871
+    B->>API: PUT capienza 9, version 870
+    API->>D: UPDATE ... WHERE id = 2 AND xmin = 870
+    D-->>API: 0 righe
+    API-->>B: 409 CONCURRENT_UPDATE
+```
+
+**Per approfondire**
+
+- **Microsoft Learn · guida, EN:** [Gestire i conflitti di concorrenza](https://learn.microsoft.com/en-us/ef/core/saving/concurrency) — capisci il token di concorrenza e `DbUpdateConcurrencyException`, poi confronta `UpdateAsync` in `RoomsService.cs`.
+- **Npgsql · guida, EN:** [Token di concorrenza con xmin](https://www.npgsql.org/efcore/modeling/concurrency.html) — perché basta una proprietà `uint` con `IsRowVersion()` e nessuna colonna nuova.
+- **Microsoft Learn · guida, EN:** [Dati iniziali con HasData](https://learn.microsoft.com/en-us/ef/core/modeling/data-seeding) — perché i valori del seed devono essere costanti.
+
 ---
 
 ## Dove sta cosa
@@ -356,14 +395,15 @@ coworking/
 │   ├── src/Coworking.Api/
 │   │   ├── Program.cs          servizi e pipeline (nucleo 4)
 │   │   ├── Common/             Result, ProblemDetails, gestione eccezioni (nucleo 1)
-│   │   ├── Features/           una cartella per funzione: Auth, Settings
-│   │   └── Infrastructure/     AppDbContext, migration, seeder della receptionist
+│   │   ├── Domain/             entità del dominio: Room, Customer
+│   │   ├── Features/           una cartella per funzione: Auth, Settings, Rooms, Customers
+│   │   └── Infrastructure/     AppDbContext, configurazioni delle tabelle, migration, dati iniziali
 │   └── tests/                  integrazione (PostgreSQL vero) e unitari
 └── frontend/src/
     ├── app/                    pagine e layout (App Router)
-    ├── components/             layout/ (shell) e ui/ (stati)
-    ├── features/               hook per funzione: auth, settings
-    ├── lib/                    client dell'API, errori, fuso orario
+    ├── components/             layout/ (shell) e ui/ (stati, conferma)
+    ├── features/               hook e moduli per funzione: auth, settings, rooms, customers
+    ├── lib/                    client dell'API, errori, fuso orario, formati di date e orari
     └── theme/                  token e tema (nucleo 6)
 ```
 
@@ -381,6 +421,11 @@ esiste e che cosa costerebbe cambiarlo.
 | **Tipo di contenuto degli errori** | Il backend risponde sempre JSON; un filtro riporta gli errori a `application/problem+json`. | Il documento OpenAPI elenca solo JSON senza ripetere la dichiarazione su ogni controller. | Dichiarare il tipo di risposta su ogni controller e togliere il filtro ([`ProblemContentTypeFilter.cs`](backend/src/Coworking.Api/Common/ProblemContentTypeFilter.cs)). |
 | **Utente iniziale** | Un servizio di avvio applica le migration e crea o allinea la receptionist; non parte quando la build genera il documento OpenAPI. | `docker compose up` basta per avere tutto pronto. | Un comando esplicito da lanciare a mano, con un passo in più all'avvio ([`ReceptionistSeeder.cs`](backend/src/Coworking.Api/Infrastructure/ReceptionistSeeder.cs)). |
 | **Documentazione dell'API** | Scalar, il documento OpenAPI e `/health` sono raggiungibili senza accesso, in ogni ambiente. | Chi valuta il progetto li apre direttamente dal container. | Limitarli all'ambiente di sviluppo o proteggerli con la sessione. |
+| **Modifiche concorrenti** | Chi salva una sala o un cliente partendo da dati vecchi riceve un 409; il modulo resta aperto e va riaperto per vedere la versione nuova. | Nessuna modifica si perde in silenzio, senza bloccare nessuno mentre legge. | Mostrare nel modulo le differenze fra la propria versione e quella salvata. |
+| **Cancellazione** | Si cancellano solo sale e clienti senza prenotazioni; una sala si può invece disattivare. | Lo storico delle prenotazioni non perde mai il riferimento. | Cancellazione logica anche per i clienti, con un filtro negli elenchi. |
+| **Orari delle sale** | Apertura e chiusura a passi di mezz'ora, nello stesso giorno. | Sono le celle della griglia della disponibilità; niente sale aperte a cavallo di mezzanotte. | Orari liberi e una griglia che li arrotonda. |
+| **Moduli** | Nessuna libreria di form: i campi si leggono con `FormData`, i controlli del browser fermano gli errori evidenti e la validazione vera è dell'API. | Meno dipendenze, e una sola fonte delle regole. | Una libreria di form con uno schema condiviso per validare anche nel browser. |
+| **Elenchi** | Sale e clienti arrivano tutti in una risposta, senza paginazione né ricerca. | Un coworking ha poche sale e qualche centinaio di clienti. | Parametri di pagina e ricerca sulle route degli elenchi. |
 
 ---
 
@@ -447,7 +492,8 @@ cd ../frontend && npm run generate:api
 ### Database e migration
 
 - **Ruolo:** EF Core traduce il modello C# in accesso ai dati; Npgsql collega EF Core a PostgreSQL; le migration fanno evolvere lo schema.
-- **File da seguire:** `Infrastructure/AppDbContext.cs`, `Infrastructure/Migrations/` e `ReceptionistSeeder.cs`.
+- **File da seguire:** `Infrastructure/AppDbContext.cs`, una classe per tabella in `Infrastructure/Configurations/`, i dati iniziali in `SeedData.cs`, `Infrastructure/Migrations/` e `ReceptionistSeeder.cs`.
+- **Nuova migration:** `dotnet ef migrations add <Nome> -o Infrastructure/Migrations` dalla cartella `src/Coworking.Api`; si applica da sola al prossimo avvio.
 
 **Per approfondire**
 
