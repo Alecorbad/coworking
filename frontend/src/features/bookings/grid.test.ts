@@ -71,6 +71,60 @@ describe("buildGrid", () => {
     expect(segments[1]).toMatchObject({ kind: "booking", span: 3, past: false });
   });
 
+  it.each([{ openingTime: "10:00:00" }, { closingTime: "10:00:00" }, { openingTime: "11:30:00" }])(
+    "keeps existing bookings visible after room hours change: %j",
+    (hours) => {
+      const existing = booking(7, 1, "09:00", "11:00");
+      const grid = buildGrid({
+        day,
+        rooms: [room(1, hours)],
+        bookings: [existing],
+        now: earlier,
+      });
+
+      expect(grid.slots[0]).toBe("09:00");
+      expect(grid.slots).toContain("10:30");
+      expect(grid.rows[0].segments[0]).toEqual({
+        kind: "booking",
+        booking: existing,
+        span: 4,
+        past: false,
+      });
+      expect(
+        grid.rows[0].segments.some(
+          (s) => s.kind === "slot" && s.state === "free" && s.slot < "11:00",
+        ),
+      ).toBe(false);
+    },
+  );
+
+  it("does not extend columns for bookings of rooms excluded by the filters", () => {
+    const grid = buildGrid({
+      day,
+      rooms: [room(1), room(2, { capacity: 2 })],
+      bookings: [booking(7, 2, "08:00", "13:00")],
+      minAttendees: 4,
+      now: earlier,
+    });
+
+    expect(grid.rows.map((r) => r.room.id)).toEqual([1]);
+    expect(grid.slots[0]).toBe("09:00");
+    expect(grid.slots.at(-1)).toBe("11:30");
+  });
+
+  it("does not extend columns for cancelled bookings outside current room hours", () => {
+    const grid = buildGrid({
+      day,
+      rooms: [room(1)],
+      bookings: [booking(7, 1, "08:00", "13:00", { status: "Cancelled" })],
+      now: earlier,
+    });
+
+    expect(grid.slots[0]).toBe("09:00");
+    expect(grid.slots.at(-1)).toBe("11:30");
+    expect(grid.rows[0].segments.every((s) => s.kind === "slot" && s.state === "free")).toBe(true);
+  });
+
   it("ignores cancelled bookings", () => {
     const grid = buildGrid({
       day,

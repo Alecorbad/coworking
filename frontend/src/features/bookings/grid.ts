@@ -56,13 +56,22 @@ export function buildGrid({
     .filter((room) => !range || isFreeInRange(room, confirmed, range, day, now));
   if (shown.length === 0) return { slots: [], rows: [] };
 
-  // Le colonne vanno dalla prima apertura all'ultima chiusura fra le sale mostrate.
-  const first = Math.min(...shown.map((r) => indexOf(r.openingTime)));
-  const last = Math.max(...shown.map((r) => indexOf(r.closingTime)));
+  // Gli orari possono cambiare dopo una prenotazione: le colonne devono includere anche le
+  // prenotazioni esistenti delle sale mostrate, perché restino visibili per intero.
+  const shownIds = new Set(shown.map((r) => r.id));
+  const visibleBookings = confirmed.filter((b) => shownIds.has(b.roomId));
+  const first = Math.min(
+    ...shown.map((r) => indexOf(r.openingTime)),
+    ...visibleBookings.map((b) => indexOf(localTime(b.startsAt))),
+  );
+  const last = Math.max(
+    ...shown.map((r) => indexOf(r.closingTime)),
+    ...visibleBookings.map((b) => indexOf(localTime(b.endsAt))),
+  );
   const slots = HALF_HOURS.slice(first, last);
 
   const rows = shown.map((room) => {
-    const own = confirmed.filter((b) => b.roomId === room.id);
+    const own = visibleBookings.filter((b) => b.roomId === room.id);
     const segments: Segment[] = [];
     for (let i = 0; i < slots.length;) {
       const slot = slots[i];
