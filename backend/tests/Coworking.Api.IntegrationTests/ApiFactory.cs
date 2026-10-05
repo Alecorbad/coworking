@@ -1,9 +1,3 @@
-// Ruolo:   avvia l'API vera in memoria per i test di integrazione
-// Riceve:  TEST_DATABASE_CONNECTION (o il PostgreSQL di docker compose)
-// Produce: un HttpClient contro un database coworking_tests ricreato a ogni esecuzione
-// Regola:  i test usano PostgreSQL vero, non un database simulato
-// Vedi:    ApiFactory e SharedApi, Features/*Tests.cs
-
 using System.Net.Http.Json;
 using Coworking.Api.Features.Auth;
 using Coworking.Api.Infrastructure;
@@ -14,17 +8,22 @@ using Microsoft.EntityFrameworkCore;
 namespace Coworking.Api.IntegrationTests;
 
 /// <summary>
-/// API reale in memoria collegata a un PostgreSQL vero, su un database dedicato ai test
-/// che viene ricreato a ogni esecuzione: all'avvio l'app applica le migration e crea la
-/// receptionist, come in produzione. Una sola istanza per tutte le classi di test
-/// (<see cref="SharedApi"/>), perché condividono lo stesso database.
+/// Avvia l'API vera in memoria, collegata a un PostgreSQL vero: niente database simulato. Usa un
+/// database apposito, <c>coworking_tests</c>, ricreato a ogni esecuzione. All'avvio l'app applica le
+/// migration e crea la receptionist, esattamente come in produzione.
 /// </summary>
+/// <remarks>
+/// Il server PostgreSQL si sceglie con <c>TEST_DATABASE_CONNECTION</c>; senza, si usa quello di
+/// docker compose. Tutte le classi di test condividono un'unica istanza (<see cref="SharedApi"/>),
+/// perché lavorano sullo stesso database.
+/// </remarks>
 public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
+    /// <summary>Credenziali della receptionist creata all'avvio dei test.</summary>
     public const string ReceptionistEmail = "receptionist@coworking.test";
     public const string ReceptionistPassword = "Test-password-1";
 
-    // Predefinito: il PostgreSQL di docker compose sull'host (porta 5433).
+    // Se TEST_DATABASE_CONNECTION non c'è, si usa il PostgreSQL di docker compose sull'host (porta 5433).
     private const string DefaultConnectionString =
         "Host=localhost;Port=5433;Username=coworking;Password=coworking";
 
@@ -41,7 +40,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 
     public async ValueTask InitializeAsync()
     {
-        // Il database va cancellato prima di avviare l'app, che al primo uso lo ricrea con le migration.
+        // Si cancella il database prima che l'app parta: al primo uso lo ricrea con le migration.
         var options = new DbContextOptionsBuilder<AppDbContext>()
             .UseNpgsql(ConnectionString)
             .UseSnakeCaseNamingConvention()
@@ -52,7 +51,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         }
     }
 
-    /// <summary>Client con la sessione della receptionist già aperta (il cookie lo tiene il client).</summary>
+    /// <summary>Un client con la sessione della receptionist già aperta; il cookie lo conserva il client stesso.</summary>
     public async Task<HttpClient> CreateAuthenticatedClientAsync()
     {
         var client = CreateClient();

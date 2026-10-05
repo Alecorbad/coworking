@@ -1,21 +1,23 @@
-// Ruolo:   prenotazione di una sala per un cliente in una fascia oraria
-// Riceve:  valori dal service delle prenotazioni e dal seed dimostrativo
-// Produce: riga della tabella bookings
-// Regola:  intervallo semiaperto [StartsAt, EndsAt): 9-10 e 10-11 non si sovrappongono
-// Vedi:    Infrastructure/Configurations/BookingConfiguration.cs, Features/Bookings/
-
 using System.Text.Json.Serialization;
 
 namespace Coworking.Api.Domain;
 
-/// <summary>Una prenotazione non si cancella: si annulla e resta visibile nello storico.</summary>
+/// <summary>Stato di una prenotazione. Nel JSON compare come testo ("Confirmed", "Cancelled").</summary>
 [JsonConverter(typeof(JsonStringEnumConverter<BookingStatus>))]
 public enum BookingStatus
 {
+    /// <summary>La prenotazione è valida e occupa la sala.</summary>
     Confirmed,
+
+    /// <summary>La prenotazione è stata annullata: resta nello storico, ma libera la fascia.</summary>
     Cancelled,
 }
 
+/// <summary>
+/// La prenotazione di una sala per un cliente in una fascia oraria. La fascia è un intervallo
+/// semiaperto [inizio, fine): 9:00–10:00 e 10:00–11:00 non si sovrappongono.
+/// Una prenotazione non si cancella mai: si annulla.
+/// </summary>
 public sealed class Booking
 {
     public int Id { get; set; }
@@ -28,19 +30,20 @@ public sealed class Booking
 
     public Room Room { get; set; } = null!;
 
-    /// <summary>Inizio, in UTC; l'interfaccia lo mostra nell'ora del coworking.</summary>
+    /// <summary>Inizio della fascia, in UTC. L'interfaccia lo mostra nell'ora del coworking.</summary>
     public DateTimeOffset StartsAt { get; set; }
 
-    /// <summary>Fine esclusa, in UTC: sempre dopo l'inizio.</summary>
+    /// <summary>Fine della fascia, in UTC, esclusa dall'intervallo. Viene sempre dopo l'inizio.</summary>
     public DateTimeOffset EndsAt { get; set; }
 
+    /// <summary>Numero di partecipanti, mai più dei posti della sala.</summary>
     public int Attendees { get; set; }
 
     public BookingStatus Status { get; set; } = BookingStatus.Confirmed;
 
-    /// <summary>Istante della registrazione, in UTC; lo decide il server.</summary>
+    /// <summary>Quando è stata registrata, in UTC. Lo decide il server.</summary>
     public DateTimeOffset CreatedAt { get; set; }
 
-    /// <summary>Istante dell'annullamento; null finché la prenotazione è confermata.</summary>
+    /// <summary>Quando è stata annullata, in UTC; null finché resta confermata.</summary>
     public DateTimeOffset? CancelledAt { get; set; }
 }

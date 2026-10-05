@@ -31,7 +31,7 @@
         "tags": [
           "Rooms"
         ],
-        "summary": "Crea una sala, attiva.",
+        "summary": "Crea una sala, già attiva. Il nome deve essere libero.",
         "requestBody": {
           "content": {
             "application/json": {
@@ -130,7 +130,7 @@
         "tags": [
           "Rooms"
         ],
-        "summary": "Modifica una sala, anche per disattivarla o riattivarla.",
+        "summary": "Modifica una sala; serve anche a disattivarla o a riattivarla.",
         "parameters": [
           {
             "name": "id",
@@ -209,7 +209,7 @@
         "tags": [
           "Rooms"
         ],
-        "summary": "Cancella una sala senza prenotazioni; altrimenti va disattivata.",
+        "summary": "Cancella una sala che non ha mai avuto prenotazioni. Altrimenti risponde 409: va disattivata.",
         "parameters": [
           {
             "name": "id",
@@ -274,7 +274,7 @@
         "tags": [
           "Customers"
         ],
-        "summary": "Registra un cliente.",
+        "summary": "Registra un cliente. L'email deve essere libera.",
         "requestBody": {
           "content": {
             "application/json": {
@@ -452,7 +452,7 @@
         "tags": [
           "Customers"
         ],
-        "summary": "Cancella un cliente senza prenotazioni.",
+        "summary": "Cancella un cliente che non ha mai avuto prenotazioni. Altrimenti risponde 409.",
         "parameters": [
           {
             "name": "id",
@@ -496,7 +496,7 @@
         "tags": [
           "Bookings"
         ],
-        "summary": "Prenotazioni che intersecano la fascia [from, to), annullate comprese, al massimo 31 giorni.\nInsieme all'elenco delle sale basta a disegnare la griglia della disponibilità.",
+        "summary": "Le prenotazioni che toccano la fascia [from, to), annullate comprese, per al massimo 31 giorni.\nInsieme all'elenco delle sale basta a disegnare la griglia della disponibilità.",
         "parameters": [
           {
             "name": "from",
@@ -547,7 +547,7 @@
         "tags": [
           "Bookings"
         ],
-        "summary": "Prenota una sala per un cliente.",
+        "summary": "Prenota una sala per un cliente, dopo aver controllato tutte le regole.",
         "requestBody": {
           "content": {
             "application/json": {
@@ -648,7 +648,7 @@
         "tags": [
           "Bookings"
         ],
-        "summary": "Annulla una prenotazione non ancora cominciata; resta visibile come Cancelled.",
+        "summary": "Annulla una prenotazione non ancora cominciata. Resta visibile, con stato Cancelled.",
         "parameters": [
           {
             "name": "id",
@@ -699,7 +699,7 @@
         "tags": [
           "Bookings"
         ],
-        "summary": "Tutte le prenotazioni di un cliente, annullate comprese.",
+        "summary": "Tutte le prenotazioni di un cliente, comprese quelle annullate.",
         "parameters": [
           {
             "name": "customerId",
@@ -743,7 +743,7 @@
         "tags": [
           "Auth"
         ],
-        "summary": "Apre la sessione: la risposta imposta il cookie HttpOnly.",
+        "summary": "Apre la sessione. Se le credenziali sono giuste, la risposta imposta il cookie HttpOnly.",
         "requestBody": {
           "content": {
             "application/json": {
@@ -803,7 +803,7 @@
         "tags": [
           "Auth"
         ],
-        "summary": "Chiude la sessione.",
+        "summary": "Chiude la sessione e cancella il cookie.",
         "responses": {
           "204": {
             "description": "No Content"
@@ -826,7 +826,7 @@
         "tags": [
           "Auth"
         ],
-        "summary": "Operatore della sessione corrente: il frontend lo usa per sapere se è autenticato.",
+        "summary": "Chi è collegato. Il frontend lo chiama per sapere se c'è una sessione: senza, risponde 401.",
         "responses": {
           "200": {
             "description": "OK",
@@ -895,26 +895,26 @@
           },
           "startsAt": {
             "type": "string",
-            "description": "Inizio, in UTC.",
+            "description": "Inizio della fascia, in UTC.",
             "format": "date-time"
           },
           "endsAt": {
             "type": "string",
-            "description": "Fine esclusa, in UTC.",
+            "description": "Fine della fascia, in UTC, esclusa dall'intervallo.",
             "format": "date-time"
           },
           "attendees": {
             "type": "integer",
-            "description": "Partecipanti.",
+            "description": "Numero di partecipanti.",
             "format": "int32"
           },
           "status": {
-            "description": "Confirmed oppure Cancelled: le annullate restano visibili.",
+            "description": "Confirmed oppure Cancelled: anche le annullate restano visibili.",
             "$ref": "#/components/schemas/BookingStatus"
           },
           "createdAt": {
             "type": "string",
-            "description": "Istante della registrazione, in UTC.",
+            "description": "Quando è stata registrata, in UTC.",
             "format": "date-time"
           },
           "cancelledAt": {
@@ -922,17 +922,18 @@
               "null",
               "string"
             ],
-            "description": "Istante dell'annullamento, null se confermata.",
+            "description": "Quando è stata annullata, in UTC; null se è confermata.",
             "format": "date-time"
           }
-        }
+        },
+        "description": "Una prenotazione, con i nomi di sala e cliente già pronti da mostrare."
       },
       "BookingStatus": {
         "enum": [
           "Confirmed",
           "Cancelled"
         ],
-        "description": "Una prenotazione non si cancella: si annulla e resta visibile nello storico."
+        "description": "Stato di una prenotazione. Nel JSON compare come testo (\"Confirmed\", \"Cancelled\")."
       },
       "CreateBookingRequest": {
         "required": [
@@ -946,30 +947,31 @@
         "properties": {
           "customerId": {
             "type": "integer",
-            "description": "Cliente che prenota.",
+            "description": "Cliente a nome del quale si prenota.",
             "format": "int32"
           },
           "roomId": {
             "type": "integer",
-            "description": "Sala prenotata; deve essere attiva.",
+            "description": "Sala da prenotare; deve essere attiva.",
             "format": "int32"
           },
           "startsAt": {
             "type": "string",
-            "description": "Inizio, con fuso (ISO 8601), a passi di mezz'ora nell'ora del coworking.",
+            "description": "Inizio, con lo scarto dal fuso (ISO 8601), sull'ora o sulla mezz'ora nell'ora del coworking.",
             "format": "date-time"
           },
           "endsAt": {
             "type": "string",
-            "description": "Fine esclusa, dopo l'inizio, nello stesso giorno e dentro gli orari della sala.",
+            "description": "Fine, esclusa: dopo l'inizio, nello stesso giorno e dentro gli orari della sala.",
             "format": "date-time"
           },
           "attendees": {
             "type": "integer",
-            "description": "Partecipanti, al massimo la capienza della sala.",
+            "description": "Numero di partecipanti, al massimo i posti della sala.",
             "format": "int32"
           }
-        }
+        },
+        "description": "Dati di una prenotazione nuova."
       },
       "CreateCustomerRequest": {
         "required": [
@@ -989,9 +991,10 @@
           },
           "email": {
             "type": "string",
-            "description": "Unica senza distinguere maiuscole; si salva in minuscolo."
+            "description": "Email unica, senza distinguere le maiuscole; si salva in minuscolo."
           }
-        }
+        },
+        "description": "Dati di un cliente nuovo."
       },
       "CreateRoomRequest": {
         "required": [
@@ -1004,24 +1007,25 @@
         "properties": {
           "name": {
             "type": "string",
-            "description": "Nome mostrato nella griglia; unico."
+            "description": "Nome mostrato nella griglia; deve essere unico."
           },
           "capacity": {
             "type": "integer",
-            "description": "Partecipanti massimi per prenotazione.",
+            "description": "Numero massimo di partecipanti a una prenotazione.",
             "format": "int32"
           },
           "openingTime": {
             "type": "string",
-            "description": "Apertura, ora locale del coworking, a passi di mezz'ora.",
+            "description": "Ora di apertura, nell'ora locale del coworking, sull'ora o sulla mezz'ora.",
             "format": "time"
           },
           "closingTime": {
             "type": "string",
-            "description": "Chiusura, dopo l'apertura, a passi di mezz'ora.",
+            "description": "Ora di chiusura, dopo l'apertura, sull'ora o sulla mezz'ora.",
             "format": "time"
           }
-        }
+        },
+        "description": "Dati di una sala nuova, che nasce attiva."
       },
       "CustomerResponse": {
         "required": [
@@ -1048,14 +1052,15 @@
           },
           "email": {
             "type": "string",
-            "description": "Email, in minuscolo."
+            "description": "Email, sempre in minuscolo."
           },
           "registeredAt": {
             "type": "string",
-            "description": "Istante della registrazione, in UTC.",
+            "description": "Quando il cliente è stato registrato, in UTC.",
             "format": "date-time"
           }
-        }
+        },
+        "description": "Un cliente, come lo vede il frontend."
       },
       "LoginRequest": {
         "required": [
@@ -1065,12 +1070,15 @@
         "type": "object",
         "properties": {
           "email": {
-            "type": "string"
+            "type": "string",
+            "description": "Email della receptionist."
           },
           "password": {
-            "type": "string"
+            "type": "string",
+            "description": "Password in chiaro: viaggia solo dentro la richiesta e non si salva mai."
           }
-        }
+        },
+        "description": "Credenziali del modulo di accesso."
       },
       "MeResponse": {
         "required": [
@@ -1080,9 +1088,10 @@
         "properties": {
           "email": {
             "type": "string",
-            "description": "Email con cui l'operatore ha fatto l'accesso."
+            "description": "Email con cui la receptionist ha fatto l'accesso."
           }
-        }
+        },
+        "description": "Chi è collegato in questa sessione."
       },
       "ProblemDetails": {
         "type": "object",
@@ -1147,19 +1156,20 @@
           },
           "openingTime": {
             "type": "string",
-            "description": "Apertura, ora locale del coworking.",
+            "description": "Ora di apertura, nell'ora locale del coworking.",
             "format": "time"
           },
           "closingTime": {
             "type": "string",
-            "description": "Chiusura, ora locale del coworking.",
+            "description": "Ora di chiusura, nell'ora locale del coworking.",
             "format": "time"
           },
           "isActive": {
             "type": "boolean",
-            "description": "false se la sala non accetta nuove prenotazioni."
+            "description": "False se la sala è disattivata e non accetta nuove prenotazioni."
           }
-        }
+        },
+        "description": "Una sala, come la vede il frontend."
       },
       "UpdateCustomerRequest": {
         "required": [
@@ -1179,9 +1189,10 @@
           },
           "email": {
             "type": "string",
-            "description": "Unica senza distinguere maiuscole; si salva in minuscolo."
+            "description": "Email unica, senza distinguere le maiuscole; si salva in minuscolo."
           }
-        }
+        },
+        "description": "Nuovi dati di un cliente esistente."
       },
       "UpdateRoomRequest": {
         "required": [
@@ -1195,28 +1206,29 @@
         "properties": {
           "name": {
             "type": "string",
-            "description": "Nome mostrato nella griglia; unico."
+            "description": "Nome mostrato nella griglia; deve essere unico."
           },
           "capacity": {
             "type": "integer",
-            "description": "Partecipanti massimi per prenotazione.",
+            "description": "Numero massimo di partecipanti a una prenotazione.",
             "format": "int32"
           },
           "openingTime": {
             "type": "string",
-            "description": "Apertura, ora locale del coworking, a passi di mezz'ora.",
+            "description": "Ora di apertura, nell'ora locale del coworking, sull'ora o sulla mezz'ora.",
             "format": "time"
           },
           "closingTime": {
             "type": "string",
-            "description": "Chiusura, dopo l'apertura, a passi di mezz'ora.",
+            "description": "Ora di chiusura, dopo l'apertura, sull'ora o sulla mezz'ora.",
             "format": "time"
           },
           "isActive": {
             "type": "boolean",
-            "description": "false disattiva la sala: niente nuove prenotazioni, le esistenti restano."
+            "description": "Con false la sala si disattiva: niente nuove prenotazioni, quelle esistenti restano."
           }
-        }
+        },
+        "description": "Nuovi dati di una sala esistente, compreso lo stato attiva o disattivata."
       }
     }
   },

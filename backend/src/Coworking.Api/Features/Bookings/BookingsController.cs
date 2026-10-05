@@ -1,22 +1,16 @@
-// Ruolo:   porta HTTP delle prenotazioni
-// Riceve:  richieste JSON su /api/bookings e /api/customers/{id}/bookings
-// Produce: BookingResponse (o un elenco), 201 con Location, oppure un ProblemDetails tramite ToProblem
-// Regola:  nessuna logica qui: si delega a BookingsService e si traduce il Result
-// Vedi:    Features/Bookings/BookingsService.cs
-
 using System.ComponentModel.DataAnnotations;
 using Coworking.Api.Common;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Coworking.Api.Features.Bookings;
 
-/// <summary>Prenotazioni delle sale.</summary>
+/// <summary>Le prenotazioni delle sale: lettura per fascia e per cliente, creazione e annullamento.</summary>
 [ApiController]
 [Route("api/bookings")]
 public sealed class BookingsController(BookingsService bookings) : ControllerBase
 {
     /// <summary>
-    /// Prenotazioni che intersecano la fascia [from, to), annullate comprese, al massimo 31 giorni.
+    /// Le prenotazioni che toccano la fascia [from, to), annullate comprese, per al massimo 31 giorni.
     /// Insieme all'elenco delle sale basta a disegnare la griglia della disponibilità.
     /// </summary>
     [HttpGet]
@@ -33,7 +27,7 @@ public sealed class BookingsController(BookingsService bookings) : ControllerBas
     public async Task<ActionResult<BookingResponse>> Get(int id) =>
         this.OkOrProblem(await bookings.GetAsync(id));
 
-    /// <summary>Prenota una sala per un cliente.</summary>
+    /// <summary>Prenota una sala per un cliente, dopo aver controllato tutte le regole.</summary>
     [HttpPost]
     [ProducesResponseType<BookingResponse>(StatusCodes.Status201Created)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
@@ -42,7 +36,7 @@ public sealed class BookingsController(BookingsService bookings) : ControllerBas
         (await bookings.CreateAsync(request)).Match<ActionResult<BookingResponse>>(
             booking => CreatedAtAction(nameof(Get), new { id = booking.Id }, booking), error => this.ToProblem(error));
 
-    /// <summary>Annulla una prenotazione non ancora cominciata; resta visibile come Cancelled.</summary>
+    /// <summary>Annulla una prenotazione non ancora cominciata. Resta visibile, con stato Cancelled.</summary>
     [HttpPost("{id:int}/cancel")]
     [ProducesResponseType<BookingResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
@@ -50,7 +44,7 @@ public sealed class BookingsController(BookingsService bookings) : ControllerBas
     public async Task<ActionResult<BookingResponse>> Cancel(int id) =>
         this.OkOrProblem(await bookings.CancelAsync(id));
 
-    /// <summary>Tutte le prenotazioni di un cliente, annullate comprese.</summary>
+    /// <summary>Tutte le prenotazioni di un cliente, comprese quelle annullate.</summary>
     [HttpGet("/api/customers/{customerId:int}/bookings")]
     [ProducesResponseType<IReadOnlyList<BookingResponse>>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]

@@ -1,22 +1,20 @@
-// Ruolo:   trasforma un ApiError nella risposta HTTP d'errore
-// Riceve:  un ApiError (Kind, Code, Detail)
-// Produce: ProblemDetails RFC 9457: stato dedotto dal Kind, `code` come estensione
-// Regola:  il frontend sceglie il testo dal `code`; Detail serve solo a chi legge i log
-// Vedi:    Common/Result.cs, frontend lib/error-messages.ts
-
 using Microsoft.AspNetCore.Mvc;
 
 namespace Coworking.Api.Common;
 
+/// <summary>
+/// Trasforma gli esiti dei service in risposte HTTP. Gli errori diventano un ProblemDetails
+/// (RFC 9457) con il campo <c>code</c>, da cui il frontend sceglie il messaggio da mostrare.
+/// </summary>
 public static class ProblemDetailsExtensions
 {
-    /// <summary>200 con il valore, oppure l'errore come ProblemDetails: la traduzione di ogni Result.</summary>
+    /// <summary>Restituisce 200 con il valore, oppure l'errore come ProblemDetails.</summary>
     public static ActionResult<T> OkOrProblem<T>(this ControllerBase controller, Result<T> result) =>
         result.Match<ActionResult<T>>(value => controller.Ok(value), error => controller.ToProblem(error));
 
     /// <summary>
-    /// Traduce un errore dei service in ProblemDetails RFC 9457 con il `code` come estensione.
-    /// traceId lo aggiunge la factory di MVC.
+    /// Trasforma un errore dei service in un ProblemDetails: lo stato HTTP dipende dalla famiglia
+    /// dell'errore, il <c>code</c> si aggiunge come campo in più. Il <c>traceId</c> lo inserisce MVC.
     /// </summary>
     public static ObjectResult ToProblem(this ControllerBase controller, ApiError error)
     {
@@ -37,8 +35,8 @@ public static class ProblemDetailsExtensions
     }
 
     /// <summary>
-    /// Codice di ripiego per le risposte d'errore che non nascono da un Result: validazione
-    /// automatica di [ApiController], 401/404 senza corpo, eccezioni impreviste.
+    /// Il <c>code</c> da usare quando una risposta d'errore non nasce da un <see cref="Result{T}"/>:
+    /// la validazione automatica di <c>[ApiController]</c>, i 401 e 404 senza corpo, le eccezioni impreviste.
     /// </summary>
     public static string? DefaultCode(int? status) => status switch
     {

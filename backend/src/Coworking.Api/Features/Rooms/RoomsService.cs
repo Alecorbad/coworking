@@ -1,9 +1,3 @@
-// Ruolo:   regole delle sale: elenco, creazione, modifica, disattivazione, cancellazione
-// Riceve:  richieste già validate nella forma dal controller
-// Produce: Result<RoomResponse> (o di un elenco); errori attesi come ApiError
-// Regola:  nome unico (409 ROOM_NAME_TAKEN); con prenotazioni non si cancella (409 HAS_BOOKINGS)
-// Vedi:    Features/Rooms/RoomsController.cs, Infrastructure/Configurations/RoomConfiguration.cs
-
 using Coworking.Api.Common;
 using Coworking.Api.Domain;
 using Coworking.Api.Infrastructure;
@@ -11,19 +5,25 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Coworking.Api.Features.Rooms;
 
+/// <summary>
+/// Le regole delle sale. Il nome è unico (<c>ROOM_NAME_TAKEN</c>), gli orari cadono sull'ora o sulla
+/// mezz'ora, e una sala con prenotazioni non si cancella (<c>HAS_BOOKINGS</c>): si disattiva.
+/// </summary>
 public sealed class RoomsService(AppDbContext db)
 {
     private const string NameIndex = "ix_rooms_name";
 
-    /// <summary>Tutte le sale, anche disattivate: l'interfaccia mostra lo stato accanto al nome.</summary>
+    /// <summary>Tutte le sale in ordine di nome, anche quelle disattivate: l'interfaccia ne mostra lo stato.</summary>
     public async Task<IReadOnlyList<RoomResponse>> ListAsync() =>
         await db.Rooms.AsNoTracking().OrderBy(r => r.Name).Select(r => RoomResponse.From(r)).ToListAsync();
 
+    /// <summary>Una sala, oppure <c>NOT_FOUND</c>.</summary>
     public async Task<Result<RoomResponse>> GetAsync(int id) =>
         await db.Rooms.AsNoTracking().FirstOrDefaultAsync(r => r.Id == id) is { } room
             ? RoomResponse.From(room)
             : Errors.NotFound("Room", id);
 
+    /// <summary>Crea una sala dopo aver controllato orari e nome.</summary>
     public async Task<Result<RoomResponse>> CreateAsync(CreateRoomRequest request)
     {
         var name = request.Name.Trim();
@@ -48,6 +48,7 @@ public sealed class RoomsService(AppDbContext db)
         return await SaveAsync(room, name);
     }
 
+    /// <summary>Aggiorna una sala. Vince l'ultimo salvataggio: non c'è controllo di versione.</summary>
     public async Task<Result<RoomResponse>> UpdateAsync(int id, UpdateRoomRequest request)
     {
         var name = request.Name.Trim();
@@ -76,8 +77,8 @@ public sealed class RoomsService(AppDbContext db)
     }
 
     /// <summary>
-    /// Cancella una sala senza prenotazioni, nemmeno annullate: lo storico non deve perdere il
-    /// riferimento. Con prenotazioni 409 HAS_BOOKINGS; l'alternativa è disattivarla.
+    /// Cancella una sala che non ha prenotazioni, nemmeno annullate, perché lo storico non perda il
+    /// riferimento. Se ne ha, risponde <c>HAS_BOOKINGS</c>: in quel caso la sala si disattiva.
     /// </summary>
     public async Task<Result<bool>> DeleteAsync(int id)
     {
@@ -90,7 +91,7 @@ public sealed class RoomsService(AppDbContext db)
         return deleted == 0 ? Errors.NotFound("Room", id) : true;
     }
 
-    /// <summary>Apertura prima della chiusura, entrambe a passi di mezz'ora (le celle della griglia).</summary>
+    /// <summary>L'apertura viene prima della chiusura, ed entrambe cadono sull'ora o sulla mezz'ora, come le celle della griglia.</summary>
     private static ApiError? CheckOpeningHours(TimeOnly opening, TimeOnly closing)
     {
         static bool OnHalfHour(TimeOnly time) => time is { Minute: 0 or 30, Second: 0, Millisecond: 0 };
@@ -103,6 +104,7 @@ public sealed class RoomsService(AppDbContext db)
     private Task<bool> NameTakenAsync(string name, int? exceptId) =>
         db.Rooms.AnyAsync(r => r.Id != exceptId && r.Name == name);
 
+    // Se un'altra richiesta ha preso lo stesso nome un attimo prima, lo ferma l'indice unico.
     private async Task<Result<RoomResponse>> SaveAsync(Room room, string name)
     {
         try

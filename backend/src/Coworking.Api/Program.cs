@@ -1,8 +1,5 @@
-// Ruolo:   compone l'applicazione: servizi e pipeline HTTP
-// Riceve:  configurazione (appsettings e variabili d'ambiente)
-// Produce: l'API in ascolto
-// Regola:  l'ordine dei middleware conta: vedi la sequenza numerata in fondo
-// Vedi:    Common/, Features/, Infrastructure/
+// Punto d'ingresso dell'API. La prima metà registra i servizi, la seconda costruisce il percorso
+// che ogni richiesta attraversa: lì l'ordine conta, ed è numerato.
 
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -21,20 +18,21 @@ using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Stringa di connessione letta alla creazione del DbContext, non all'avvio: la build
-// avvia l'app senza configurazione per scrivere il documento OpenAPI.
+// La stringa di connessione si legge quando nasce il DbContext, non all'avvio: durante la build
+// l'app parte senza configurazione, solo per scrivere il documento OpenAPI.
 builder.Services.AddDbContext<AppDbContext>(options => options
     .UseNpgsql(builder.Configuration.GetConnectionString("Default")
         ?? throw new InvalidOperationException("Missing connection string 'ConnectionStrings:Default'."))
     .UseSnakeCaseNamingConvention());
 
-// Fuso del coworking: le regole sugli orari di apertura leggono gli istanti UTC in quest'ora locale.
+// Fuso del coworking (Europe/Rome). Le regole sugli orari di apertura convertono gli istanti UTC in
+// quest'ora locale prima di confrontarli.
 builder.Services.AddSingleton(TimeZoneInfo.FindSystemTimeZoneById(builder.Configuration["TimeZone"]
     ?? throw new InvalidOperationException("Missing configuration key 'TimeZone'.")));
 
 // Identity: utenti e hash delle password nel database; il cookie di sessione lo gestisce il
-// middleware di autenticazione. Gli endpoint di accesso sono quelli di AuthController e non
-// c'è registrazione pubblica.
+// middleware di autenticazione. Login, logout e "chi sono" stanno in AuthController; non esiste
+// una registrazione pubblica.
 builder.Services.AddIdentityCore<IdentityUser>().AddEntityFrameworkStores<AppDbContext>().AddSignInManager();
 builder.Services
     .AddAuthentication(IdentityConstants.ApplicationScheme)
@@ -45,8 +43,8 @@ builder.Services
         options.Cookie.SameSite = SameSiteMode.Lax;
         options.ExpireTimeSpan = TimeSpan.FromHours(8);
         options.SlidingExpiration = true;
-        // Il redirect predefinito (302 verso /Account/Login) non ha senso in un'API: un 401
-        // semplice, che il frontend traduce in pagina di login. Senza ruoli un 403 non capita mai.
+        // Di base Identity risponde con un redirect a /Account/Login, che in un'API non ha senso:
+        // meglio un 401 semplice, che il frontend trasforma nella pagina di accesso.
         options.Events.OnRedirectToLogin = context =>
         {
             context.Response.StatusCode = StatusCodes.Status401Unauthorized;
@@ -58,12 +56,12 @@ builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<RoomsService>();
 builder.Services.AddScoped<CustomersService>();
 builder.Services.AddScoped<BookingsService>();
-// La build avvia l'app (host compreso) per scrivere il documento OpenAPI, senza database né
-// password: in quel caso il seed non parte.
+// Durante la build l'app parte senza database né password, solo per scrivere il documento OpenAPI:
+// in quel caso i servizi d'avvio restano spenti.
 if (System.Reflection.Assembly.GetEntryAssembly()?.GetName().Name != "GetDocument.Insider")
 {
     builder.Services.AddHostedService<ReceptionistSeeder>();
-    // Dopo ReceptionistSeeder: i servizi partono in ordine di registrazione, e quello applica le migration.
+    // Va registrato dopo ReceptionistSeeder: i servizi partono in ordine, e il primo applica le migration.
     builder.Services.AddHostedService<DemoBookingsSeeder>();
 }
 
@@ -76,14 +74,14 @@ builder.Services.AddProblemDetails(options => options.CustomizeProblemDetails = 
     }
 });
 
-// Solo JSON in uscita: il documento OpenAPI non elenca text/plain né text/json.
-// Ogni controller richiede la sessione tranne dove c'è [AllowAnonymous] (il solo login).
+// Le risposte sono solo JSON, così il documento OpenAPI non elenca anche text/plain e text/json.
+// Ogni endpoint richiede la sessione, tranne quelli marcati [AllowAnonymous]: solo il login.
 builder.Services.AddControllers(options =>
 {
     options.Filters.Add(new ProducesAttribute("application/json"));
     options.Filters.Add(new AuthorizeFilter());
 }).AddJsonOptions(options => ConfigureJson(options.JsonSerializerOptions));
-// Le stesse regole per il documento OpenAPI, che legge le opzioni JSON minimali e non quelle di MVC.
+// Le stesse regole JSON valgono per il documento OpenAPI, che legge queste opzioni e non quelle di MVC.
 builder.Services.ConfigureHttpJsonOptions(options => ConfigureJson(options.SerializerOptions));
 builder.Services.AddOpenApi();
 builder.Services.AddHealthChecks().AddDbContextCheck<AppDbContext>();
@@ -91,8 +89,8 @@ builder.Services.AddHealthChecks().AddDbContextCheck<AppDbContext>();
 var app = builder.Build();
 
 // Cammino di una richiesta; l'ordine conta.
-// 1. UseExceptionHandler: cattura le eccezioni delle fasi successive, le scrive nel log e risponde
-//    500 ProblemDetails (code INTERNAL_ERROR, nessun dettaglio interno nella risposta).
+// 1. UseExceptionHandler: intercetta le eccezioni delle fasi successive, le scrive nel log e risponde
+//    500 con un ProblemDetails (code INTERNAL_ERROR), senza dettagli interni.
 app.UseExceptionHandler();
 // 2. UseStatusCodePages: dà un corpo ProblemDetails alle risposte 401 e 404 nate senza corpo.
 app.UseStatusCodePages();
@@ -102,18 +100,18 @@ app.UseAuthentication();
 // 4. UseAuthorization: applica le regole di accesso dichiarate sugli endpoint.
 app.UseAuthorization();
 
-// 5. Endpoint. OpenAPI e Scalar sono esposti in ogni ambiente: chi valuta il progetto li usa dal container.
+// 5. Endpoint. OpenAPI e Scalar restano attivi in ogni ambiente: chi valuta il progetto li apre dal container.
 app.MapOpenApi();
 app.MapScalarApiReference();
 app.MapHealthChecks("/health");
-// 6. I controller: il filtro globale richiede la sessione, tranne dove c'è [AllowAnonymous] (il solo login).
+// 6. I controller, tutti protetti dal filtro globale tranne il login.
 app.MapControllers();
 
 app.Run();
 
-// Numeri solo come numeri (non "4" fra virgolette): il contratto dichiara integer e i tipi del
-// frontend restano number. Un campo obbligatorio assente è un 400, non un valore predefinito
-// silenzioso (0, 00:00, false).
+// JSON rigoroso. I numeri devono arrivare come numeri, non come testo ("4"): così il contratto
+// dichiara integer e nel frontend restano number. Un campo obbligatorio assente produce un 400,
+// invece di diventare in silenzio un valore predefinito come 0, 00:00 o false.
 static void ConfigureJson(JsonSerializerOptions json)
 {
     json.NumberHandling = JsonNumberHandling.Strict;

@@ -1,22 +1,23 @@
-// Ruolo:   dati dimostrativi presenti dopo la prima migration
-// Riceve:  niente: valori fissi
-// Produce: righe inserite da HasData nelle configurazioni delle entità
-// Regola:  valori costanti (id, date): HasData confronta il modello a ogni migration e un valore
-//          che cambia a ogni build genererebbe migration vuote all'infinito
-// Vedi:    Infrastructure/Configurations/
-
 using Coworking.Api.Domain;
 
 namespace Coworking.Api.Infrastructure;
 
+/// <summary>
+/// Sale e clienti dimostrativi, inseriti dalla migration iniziale tramite <c>HasData</c>.
+/// </summary>
+/// <remarks>
+/// I valori sono costanti, date comprese: EF confronta il modello a ogni migration, e un valore che
+/// cambiasse a ogni build produrrebbe migration vuote all'infinito.
+/// </remarks>
 public static class SeedData
 {
     /// <summary>
-    /// HasData inserisce id espliciti e la sequenza della colonna identity non se ne accorge:
-    /// le righe create dall'API partono da qui, così non si scontrano con quelle del seed.
+    /// Primo id per le righe create dall'API. <c>HasData</c> inserisce id espliciti (1, 2, 3…) senza
+    /// avanzare il contatore della tabella: partendo da 100, i nuovi id non si scontrano con quelli del seed.
     /// </summary>
     public const int FirstGeneratedId = 100;
 
+    /// <summary>Cinque sale; Sala Epsilon è disattivata, per mostrare il caso.</summary>
     public static readonly Room[] Rooms =
     [
         new() { Id = 1, Name = "Sala Alfa", Capacity = 4, OpeningTime = new(8, 0), ClosingTime = new(20, 0) },
@@ -28,6 +29,7 @@ public static class SeedData
 
     private static readonly DateTimeOffset SeededAt = new(2026, 9, 1, 8, 0, 0, TimeSpan.Zero);
 
+    /// <summary>Cinque clienti di esempio.</summary>
     public static readonly Customer[] Customers =
     [
         new() { Id = 1, FirstName = "Giulia", LastName = "Bianchi", Email = "giulia.bianchi@example.com", RegisteredAt = SeededAt },

@@ -1,4 +1,5 @@
 namespace Coworking.Api.Features.Auth;
 
-/// <param name="Email">Email con cui l'operatore ha fatto l'accesso.</param>
+/// <summary>Chi è collegato in questa sessione.</summary>
+/// <param name="Email">Email con cui la receptionist ha fatto l'accesso.</param>
 public sealed record MeResponse(string Email);

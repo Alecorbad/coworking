@@ -1,35 +1,38 @@
-// Ruolo:   esito di un'operazione dei service: un valore oppure un errore
-// Riceve:  un valore T o un ApiError (conversione implicita)
-// Produce: Result<T>; Match() obbliga il chiamante a gestire entrambi i rami
-// Regola:  per gli errori attesi i service restituiscono un ApiError, non lanciano eccezioni
-// Vedi:    Common/ProblemDetailsExtensions.cs (ApiError -> risposta HTTP)
-
 namespace Coworking.Api.Common;
 
-/// <summary>Famiglia dell'errore: decide lo stato HTTP della risposta.</summary>
+/// <summary>
+/// Famiglia di un errore atteso. Decide lo stato HTTP della risposta
+/// (vedi <see cref="ProblemDetailsExtensions.ToProblem"/>).
+/// </summary>
 public enum ErrorKind
 {
-    /// <summary>Richiesta sbagliata in sé: 400.</summary>
+    /// <summary>La richiesta è sbagliata in sé, e rifarla uguale fallirebbe ancora: 400.</summary>
     Validation,
 
-    /// <summary>Credenziali o sessione mancanti: 401.</summary>
+    /// <summary>Credenziali sbagliate o sessione assente: 401.</summary>
     Unauthorized,
 
-    /// <summary>Risorsa inesistente: 404.</summary>
+    /// <summary>La risorsa cercata non esiste: 404.</summary>
     NotFound,
 
-    /// <summary>Richiesta valida ma impedita dallo stato attuale: 409.</summary>
+    /// <summary>La richiesta è valida, ma lo stato attuale dei dati la impedisce: 409.</summary>
     Conflict,
 }
 
-/// <param name="Kind">Famiglia, da cui deriva lo stato HTTP.</param>
-/// <param name="Code">Codice UPPER_SNAKE_CASE da cui il frontend sceglie il testo italiano.</param>
-/// <param name="Detail">Spiegazione in inglese per chi legge i log o la risposta; mai mostrata all'utente.</param>
+/// <summary>Un errore atteso, pronto per diventare una risposta HTTP. Si crea da <see cref="Errors"/>.</summary>
+/// <param name="Kind">Famiglia dell'errore, da cui deriva lo stato HTTP.</param>
+/// <param name="Code">Codice stabile in UPPER_SNAKE_CASE: il frontend sceglie da qui il testo italiano.</param>
+/// <param name="Detail">Spiegazione in inglese per chi legge i log o la risposta grezza. L'utente non la vede mai.</param>
 public sealed record ApiError(ErrorKind Kind, string Code, string Detail);
 
 /// <summary>
-/// Esito di un'operazione dei service: un valore oppure un errore, visibili entrambi nella firma.
+/// Esito di un'operazione dei service: contiene un valore oppure un <see cref="ApiError"/>, mai entrambi.
+/// Gli errori attesi passano da qui invece che da un'eccezione, così compaiono nella firma del metodo.
 /// </summary>
+/// <remarks>
+/// Si crea per conversione implicita: <c>return room;</c> oppure <c>return Errors.NotFound("Room", id);</c>.
+/// Per leggerlo si usa <see cref="Match{TOut}"/>, che obbliga a gestire tutti e due i casi.
+/// </remarks>
 public sealed class Result<T>
 {
     private readonly T? value;
@@ -41,11 +44,13 @@ public sealed class Result<T>
         this.error = error;
     }
 
+    /// <summary>Un esito riuscito con questo valore.</summary>
     public static implicit operator Result<T>(T value) => new(value, null);
 
+    /// <summary>Un esito fallito con questo errore.</summary>
     public static implicit operator Result<T>(ApiError error) => new(default, error);
 
-    /// <summary>Applica la funzione giusta al ramo che c'è: così nessun chiamante dimentica l'errore.</summary>
+    /// <summary>Esegue <paramref name="onValue"/> se c'è un valore, altrimenti <paramref name="onError"/>.</summary>
     public TOut Match<TOut>(Func<T, TOut> onValue, Func<ApiError, TOut> onError) =>
         error is null ? onValue(value!) : onError(error);
 }

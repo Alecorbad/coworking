@@ -1,14 +1,16 @@
-// Ruolo:   regole di una prenotazione che non hanno bisogno del database
-// Riceve:  istanti UTC, la sala, il fuso del coworking, l'ora attuale
-// Produce: null se la regola è rispettata, altrimenti l'ApiError da restituire
-// Regola:  funzioni pure: le prova Coworking.Api.UnitTests senza database né orologio vero
-// Vedi:    Features/Bookings/BookingsService.cs (le chiama in ordine)
-
 using Coworking.Api.Common;
 using Coworking.Api.Domain;
 
 namespace Coworking.Api.Features.Bookings;
 
+/// <summary>
+/// Le regole di una prenotazione che non hanno bisogno del database. Ognuna restituisce null se è
+/// rispettata, altrimenti l'errore da rispondere.
+/// </summary>
+/// <remarks>
+/// Sono funzioni pure: ora attuale e fuso arrivano come argomenti, così i test le provano con istanti
+/// fissi, senza database e senza orologio vero.
+/// </remarks>
 public static class BookingRules
 {
     /// <summary>Fascia più lunga leggibile in una volta: non c'è paginazione.</summary>

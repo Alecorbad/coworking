@@ -1,17 +1,13 @@
-// Ruolo:   forma della tabella rooms
-// Riceve:  il modello Room
-// Produce: colonne, indice unico sul nome, righe del seed
-// Regola:  ogni modifica qui richiede una migration
-// Vedi:    Domain/Room.cs, Infrastructure/SeedData.cs
-
 using Coworking.Api.Domain;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Coworking.Api.Infrastructure.Configurations;
 
+/// <summary>La forma della tabella delle sale: nome unico, vincoli su capienza e orari, righe dimostrative.</summary>
 public sealed class RoomConfiguration : IEntityTypeConfiguration<Room>
 {
+    /// <summary>Lunghezza massima del nome; la usano anche le validazioni delle richieste.</summary>
     public const int NameMaxLength = 100;
 
     public void Configure(EntityTypeBuilder<Room> builder)

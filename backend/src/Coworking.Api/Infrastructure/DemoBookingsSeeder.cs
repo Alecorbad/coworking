@@ -1,20 +1,18 @@
-// Ruolo:   prenotazioni dimostrative intorno alla data di oggi
-// Riceve:  sale e clienti del seed (SeedData), il fuso del coworking
-// Produce: una decina di prenotazioni fra ieri e dopodomani, solo se la tabella è vuota
-// Regola:  non HasData: date fisse scadrebbero, e la griglia dimostrativa resterebbe vuota
-// Vedi:    Program.cs (registrata dopo ReceptionistSeeder, che applica le migration), SeedData.cs
-
 using Coworking.Api.Domain;
 using Microsoft.EntityFrameworkCore;
 
 namespace Coworking.Api.Infrastructure;
 
 /// <summary>
-/// Al primo avvio riempie la griglia con prenotazioni relative a oggi: qualcuna passata (storico
-/// del cliente), qualcuna di oggi, due consecutive sulla stessa sala (il bordo 10:00 è libero per
-/// entrambe), una annullata e una su una sala poi disattivata, che resta visibile.
-/// Le righe entrano direttamente, senza le regole del service: alcune sono nel passato apposta.
+/// Al primo avvio, se non ci sono prenotazioni, ne crea una decina intorno alla data di oggi, così
+/// la griglia dimostrativa non è mai vuota. Ci sono casi scelti apposta: prenotazioni passate (lo
+/// storico del cliente), due consecutive sulla stessa sala che si toccano alle 10:00, una annullata
+/// e una su una sala disattivata, che resta visibile.
 /// </summary>
+/// <remarks>
+/// Non usa <c>HasData</c>: date fisse finirebbero presto nel passato. Le righe entrano senza passare
+/// dalle regole del service, perché alcune sono nel passato di proposito.
+/// </remarks>
 public sealed class DemoBookingsSeeder(IServiceScopeFactory scopes, TimeZoneInfo zone)
     : IHostedService
 {
@@ -30,7 +28,7 @@ public sealed class DemoBookingsSeeder(IServiceScopeFactory scopes, TimeZoneInfo
         var today = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, zone).DateTime);
         var createdAt = At(today.AddDays(-2), 8, 0);
 
-        // (giorno rispetto a oggi, sala, cliente, inizio, fine, partecipanti, annullata)
+        // Ogni riga: giorno rispetto a oggi, sala, cliente, inizio, fine, partecipanti, annullata.
         (int Day, int Room, int Customer, TimeOnly Start, TimeOnly End, int Attendees, bool Cancelled)[] rows =
         [
             (-1, 1, 1, new(10, 0), new(11, 0), 3, false),
@@ -62,7 +60,7 @@ public sealed class DemoBookingsSeeder(IServiceScopeFactory scopes, TimeZoneInfo
 
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 
-    /// <summary>Ora locale del coworking in quel giorno, come istante UTC.</summary>
+    /// <summary>L'istante UTC che corrisponde a quell'ora locale del coworking, in quel giorno.</summary>
     private DateTimeOffset At(DateOnly day, int hour, int minute) =>
         new(TimeZoneInfo.ConvertTimeToUtc(day.ToDateTime(new TimeOnly(hour, minute)), zone), TimeSpan.Zero);
 }

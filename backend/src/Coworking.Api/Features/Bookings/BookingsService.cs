@@ -1,10 +1,3 @@
-// Ruolo:   regole delle prenotazioni: lettura per fascia e per cliente, creazione, annullamento
-// Riceve:  richieste già validate nella forma dal controller
-// Produce: Result<BookingResponse> (o di un elenco); errori attesi come ApiError
-// Regola:  prima le regole della richiesta (400), poi quelle dello stato attuale (409); i vincoli
-//          EXCLUDE fermano le sovrapposizioni che arrivano insieme e il 23P01 diventa lo stesso 409
-// Vedi:    Features/Bookings/BookingRules.cs, Infrastructure/Configurations/BookingConfiguration.cs
-
 using Coworking.Api.Common;
 using Coworking.Api.Domain;
 using Coworking.Api.Infrastructure;
@@ -13,11 +6,19 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Coworking.Api.Features.Bookings;
 
+/// <summary>
+/// Le regole delle prenotazioni. Per creare se ne controllano prima la forma e i dati (errori 400),
+/// poi lo stato attuale: sala attiva e fascia libera (errori 409).
+/// </summary>
+/// <remarks>
+/// Due richieste contemporanee possono superare entrambe il controllo delle sovrapposizioni: in quel
+/// caso le ferma il vincolo EXCLUDE del database, e il service risponde con lo stesso 409.
+/// </remarks>
 public sealed class BookingsService(AppDbContext db, TimeZoneInfo zone)
 {
     /// <summary>
-    /// Prenotazioni che intersecano [from, to), annullate comprese: alimenta la griglia della
-    /// disponibilità e la pagina delle prenotazioni.
+    /// Le prenotazioni che toccano la fascia [from, to), annullate comprese. Alimentano la griglia
+    /// della disponibilità e la pagina delle prenotazioni.
     /// </summary>
     public async Task<Result<IReadOnlyList<BookingResponse>>> ListAsync(DateTimeOffset from, DateTimeOffset to)
     {
@@ -34,7 +35,7 @@ public sealed class BookingsService(AppDbContext db, TimeZoneInfo zone)
         return bookings.Select(BookingResponse.From).ToList();
     }
 
-    /// <summary>Tutte le prenotazioni di un cliente, dalla più vecchia, annullate comprese.</summary>
+    /// <summary>Tutte le prenotazioni di un cliente, dalla più vecchia, comprese quelle annullate.</summary>
     public async Task<Result<IReadOnlyList<BookingResponse>>> ListForCustomerAsync(int customerId)
     {
         if (!await db.Customers.AnyAsync(c => c.Id == customerId))
@@ -46,18 +47,20 @@ public sealed class BookingsService(AppDbContext db, TimeZoneInfo zone)
         return bookings.Select(BookingResponse.From).ToList();
     }
 
+    /// <summary>Una prenotazione, oppure <c>NOT_FOUND</c>.</summary>
     public async Task<Result<BookingResponse>> GetAsync(int id) =>
         await WithNames().FirstOrDefaultAsync(b => b.Id == id) is { } booking
             ? BookingResponse.From(booking)
             : Errors.NotFound("Booking", id);
 
+    /// <summary>Crea una prenotazione confermata, se rispetta tutte le regole.</summary>
     public async Task<Result<BookingResponse>> CreateAsync(CreateBookingRequest request)
     {
         var startsAt = request.StartsAt.ToUniversalTime();
         var endsAt = request.EndsAt.ToUniversalTime();
         var now = DbClock.UtcNow();
 
-        // La forma della fascia, senza database.
+        // Prima la forma della fascia, che non richiede il database.
         if ((BookingRules.CheckTimeRange(startsAt, endsAt, zone) ?? BookingRules.CheckNotInPast(startsAt, now)) is { } invalid)
         {
             return invalid;
@@ -75,7 +78,7 @@ public sealed class BookingsService(AppDbContext db, TimeZoneInfo zone)
             return Errors.Validation($"Customer {request.CustomerId} does not exist.");
         }
 
-        // Richiesta sbagliata in sé (400), poi impedita dallo stato attuale (409).
+        // Prima gli errori della richiesta (400), poi quelli dovuti allo stato della sala (409).
         var broken = BookingRules.CheckOpeningHours(startsAt, endsAt, room, zone)
             ?? BookingRules.CheckCapacity(request.Attendees, room)
             ?? BookingRules.CheckRoomActive(room);
@@ -105,6 +108,7 @@ public sealed class BookingsService(AppDbContext db, TimeZoneInfo zone)
             CreatedAt = now,
         };
         db.Bookings.Add(booking);
+        // Se un'altra richiesta ha occupato la fascia un attimo prima, la ferma il vincolo EXCLUDE.
         try
         {
             await db.SaveChangesAsync();
@@ -122,8 +126,8 @@ public sealed class BookingsService(AppDbContext db, TimeZoneInfo zone)
     }
 
     /// <summary>
-    /// Porta la prenotazione a Cancelled; resta visibile. Annullare due volte non cambia nulla;
-    /// una prenotazione già cominciata non si annulla più.
+    /// Annulla una prenotazione, che resta visibile con stato Cancelled. Annullarla una seconda volta
+    /// non cambia nulla; una prenotazione già cominciata non si può più annullare.
     /// </summary>
     public async Task<Result<BookingResponse>> CancelAsync(int id)
     {
@@ -150,7 +154,7 @@ public sealed class BookingsService(AppDbContext db, TimeZoneInfo zone)
         return BookingResponse.From(booking);
     }
 
-    /// <summary>Prenotazioni in sola lettura con sala e cliente caricati, per i nomi nella risposta.</summary>
+    /// <summary>Le prenotazioni in sola lettura, con sala e cliente caricati per avere i loro nomi nella risposta.</summary>
     private IQueryable<Booking> WithNames() =>
         db.Bookings.AsNoTracking().Include(b => b.Customer).Include(b => b.Room);
 }

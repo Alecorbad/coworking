@@ -1,15 +1,9 @@
-// Ruolo:   porta HTTP dei clienti
-// Riceve:  richieste JSON su /api/customers
-// Produce: CustomerResponse, 201 con Location, 204, oppure un ProblemDetails tramite ToProblem
-// Regola:  nessuna logica qui: si delega a CustomersService e si traduce il Result
-// Vedi:    Features/Customers/CustomersService.cs
-
 using Coworking.Api.Common;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Coworking.Api.Features.Customers;
 
-/// <summary>Clienti del coworking.</summary>
+/// <summary>I clienti del coworking: elenco, dettaglio, registrazione, modifica e cancellazione.</summary>
 [ApiController]
 [Route("api/customers")]
 public sealed class CustomersController(CustomersService customers) : ControllerBase
@@ -26,7 +20,7 @@ public sealed class CustomersController(CustomersService customers) : Controller
     public async Task<ActionResult<CustomerResponse>> Get(int id) =>
         this.OkOrProblem(await customers.GetAsync(id));
 
-    /// <summary>Registra un cliente.</summary>
+    /// <summary>Registra un cliente. L'email deve essere libera.</summary>
     [HttpPost]
     [ProducesResponseType<CustomerResponse>(StatusCodes.Status201Created)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
@@ -44,7 +38,7 @@ public sealed class CustomersController(CustomersService customers) : Controller
     public async Task<ActionResult<CustomerResponse>> Update(int id, UpdateCustomerRequest request) =>
         this.OkOrProblem(await customers.UpdateAsync(id, request));
 
-    /// <summary>Cancella un cliente senza prenotazioni.</summary>
+    /// <summary>Cancella un cliente che non ha mai avuto prenotazioni. Altrimenti risponde 409.</summary>
     [HttpDelete("{id:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]

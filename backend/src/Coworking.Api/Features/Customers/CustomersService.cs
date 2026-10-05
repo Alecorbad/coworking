@@ -1,9 +1,3 @@
-// Ruolo:   regole dei clienti: elenco, creazione, modifica, cancellazione
-// Riceve:  richieste già validate nella forma dal controller
-// Produce: Result<CustomerResponse> (o di un elenco); errori attesi come ApiError
-// Regola:  email unica (409 EMAIL_TAKEN); con prenotazioni non si cancella (409 HAS_BOOKINGS)
-// Vedi:    Features/Customers/CustomersController.cs, Infrastructure/Configurations/CustomerConfiguration.cs
-
 using Coworking.Api.Common;
 using Coworking.Api.Domain;
 using Coworking.Api.Infrastructure;
@@ -11,6 +5,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Coworking.Api.Features.Customers;
 
+/// <summary>
+/// Le regole dei clienti. L'email si normalizza e deve essere unica (<c>EMAIL_TAKEN</c>); un cliente
+/// con prenotazioni non si cancella (<c>HAS_BOOKINGS</c>).
+/// </summary>
 public sealed class CustomersService(AppDbContext db)
 {
     private const string EmailIndex = "ix_customers_email";
@@ -22,11 +20,13 @@ public sealed class CustomersService(AppDbContext db)
             .Select(c => CustomerResponse.From(c))
             .ToListAsync();
 
+    /// <summary>Un cliente, oppure <c>NOT_FOUND</c>.</summary>
     public async Task<Result<CustomerResponse>> GetAsync(int id) =>
         await db.Customers.AsNoTracking().FirstOrDefaultAsync(c => c.Id == id) is { } customer
             ? CustomerResponse.From(customer)
             : Errors.NotFound("Customer", id);
 
+    /// <summary>Registra un cliente con l'email normalizzata, se non è già usata.</summary>
     public async Task<Result<CustomerResponse>> CreateAsync(CreateCustomerRequest request)
     {
         var email = Customer.NormalizeEmail(request.Email);
@@ -46,6 +46,7 @@ public sealed class CustomersService(AppDbContext db)
         return await SaveAsync(customer);
     }
 
+    /// <summary>Aggiorna un cliente. Vince l'ultimo salvataggio: non c'è controllo di versione.</summary>
     public async Task<Result<CustomerResponse>> UpdateAsync(int id, UpdateCustomerRequest request)
     {
         var customer = await db.Customers.FirstOrDefaultAsync(c => c.Id == id);
@@ -67,8 +68,8 @@ public sealed class CustomersService(AppDbContext db)
     }
 
     /// <summary>
-    /// Cancella un cliente senza prenotazioni, nemmeno annullate: lo storico non deve perdere il
-    /// riferimento. Con prenotazioni 409 HAS_BOOKINGS.
+    /// Cancella un cliente che non ha prenotazioni, nemmeno annullate, perché lo storico non perda il
+    /// riferimento. Se ne ha, risponde <c>HAS_BOOKINGS</c>.
     /// </summary>
     public async Task<Result<bool>> DeleteAsync(int id)
     {
@@ -84,6 +85,7 @@ public sealed class CustomersService(AppDbContext db)
     private Task<bool> EmailTakenAsync(string email, int? exceptId) =>
         db.Customers.AnyAsync(c => c.Id != exceptId && c.Email == email);
 
+    // Se un'altra richiesta ha preso la stessa email un attimo prima, la ferma l'indice unico.
     private async Task<Result<CustomerResponse>> SaveAsync(Customer customer)
     {
         try

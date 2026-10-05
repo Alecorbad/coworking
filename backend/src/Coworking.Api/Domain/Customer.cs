@@ -1,11 +1,6 @@
-// Ruolo:   cliente del coworking che prenota le sale
-// Riceve:  valori dai service dei clienti
-// Produce: riga della tabella customers
-// Regola:  l'email si salva normalizzata (senza spazi, minuscola): così l'indice unico basta
-// Vedi:    Infrastructure/Configurations/CustomerConfiguration.cs, Features/Customers/
-
 namespace Coworking.Api.Domain;
 
+/// <summary>Un cliente del coworking, a nome del quale si prenotano le sale.</summary>
 public sealed class Customer
 {
     public int Id { get; set; }
@@ -14,11 +9,15 @@ public sealed class Customer
 
     public required string LastName { get; set; }
 
-    /// <summary>Sempre minuscola: «Mario@X.it» e «mario@x.it» sono lo stesso cliente.</summary>
+    /// <summary>Email unica, salvata già normalizzata (vedi <see cref="NormalizeEmail"/>).</summary>
     public required string Email { get; set; }
 
-    /// <summary>Istante della registrazione, in UTC; lo decide il server.</summary>
+    /// <summary>Quando il cliente è stato registrato, in UTC. Lo decide il server.</summary>
     public DateTimeOffset RegisteredAt { get; set; }
 
+    /// <summary>
+    /// Toglie gli spazi e porta l'email in minuscolo: «Mario@X.it » e «mario@x.it» diventano lo stesso
+    /// indirizzo, e l'indice unico basta a fermare i doppioni.
+    /// </summary>
     public static string NormalizeEmail(string email) => email.Trim().ToLowerInvariant();
 }

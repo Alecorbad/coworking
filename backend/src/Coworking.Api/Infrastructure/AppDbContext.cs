@@ -1,9 +1,3 @@
-// Ruolo:   unico punto d'accesso al database
-// Riceve:  query LINQ dai service
-// Produce: SQL verso PostgreSQL; colonne e vincoli in snake_case
-// Regola:  ogni modifica al modello richiede una migration
-// Vedi:    Infrastructure/Configurations/, Infrastructure/Migrations/, Program.cs (AddDbContext)
-
 using Coworking.Api.Domain;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -12,9 +6,9 @@ using Microsoft.EntityFrameworkCore;
 namespace Coworking.Api.Infrastructure;
 
 /// <summary>
-/// Accesso al database: i service lo usano direttamente.
-/// Identity porta solo la tabella degli utenti (nessun ruolo: c'è una sola receptionist).
-/// La forma delle tabelle del dominio sta in Configurations/, una classe per entità.
+/// L'accesso al database, usato direttamente dai service. Da Identity arriva solo la tabella degli
+/// utenti, senza ruoli: c'è una sola receptionist. La forma di ogni tabella del dominio sta in
+/// <c>Configurations/</c>, una classe per entità; ogni modifica al modello richiede una migration.
 /// </summary>
 public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
     : IdentityUserContext<IdentityUser>(options)
@@ -28,8 +22,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
-        // Serve ai vincoli EXCLUDE delle prenotazioni: mette gli operatori di uguaglianza degli
-        // interi (sala, cliente) negli indici GiST, accanto alla sovrapposizione degli intervalli.
+        // I vincoli EXCLUDE delle prenotazioni confrontano sala o cliente con "=" e le fasce con "&&".
+        // Gli indici GiST conoscono già "&&" sugli intervalli; btree_gist aggiunge "=" sugli interi.
         builder.HasPostgresExtension("btree_gist");
         builder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
     }

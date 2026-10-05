@@ -1,11 +1,12 @@
 namespace Coworking.Api.Infrastructure;
 
+/// <summary>L'orologio usato per gli istanti che si salvano nel database.</summary>
 public static class DbClock
 {
     /// <summary>
-    /// L'ora attuale in UTC, arrotondata ai microsecondi: PostgreSQL conserva i microsecondi, .NET
-    /// i decimi di microsecondo, e senza arrotondare la risposta di una creazione e la rilettura
-    /// successiva mostrerebbero due istanti diversi.
+    /// L'ora attuale in UTC, arrotondata al microsecondo. PostgreSQL conserva i microsecondi e .NET i
+    /// decimi di microsecondo: senza arrotondare, la risposta di una creazione e la rilettura successiva
+    /// mostrerebbero due istanti diversi.
     /// </summary>
     public static DateTimeOffset UtcNow()
     {
