@@ -19,6 +19,7 @@ import { useCustomer } from "@/features/customers/api";
 import { CustomerDialog } from "@/features/customers/customer-dialog";
 import { formatDate } from "@/lib/coworking-time";
 
+/** Un dato del cliente, con l'etichetta sopra il valore. */
 function Field({ label, value }: { label: string; value: string }) {
   return (
     <Stack spacing={1}>
@@ -30,6 +31,7 @@ function Field({ label, value }: { label: string; value: string }) {
   );
 }
 
+/** Il dettaglio di un cliente: i suoi dati e tutte le sue prenotazioni, che si possono annullare da qui. */
 export default function CustomerPage() {
   const { id } = useParams<{ id: string }>();
   const customer = useCustomer(Number(id));
@@ -85,7 +87,7 @@ export default function CustomerPage() {
   );
 }
 
-// Le prenotazioni del cliente, dalla più vecchia, annullate comprese; si annullano da qui.
+/** Le prenotazioni del cliente, dalla più vecchia, comprese le annullate. */
 function CustomerBookings({ customerId }: { customerId: number }) {
   const bookings = useCustomerBookings(customerId);
 

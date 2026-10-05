@@ -1,10 +1,3 @@
-// Ruolo:   pagina principale: cerca le sale libere di un giorno e prenota dalla griglia
-// Riceve:  giorno, fascia facoltativa e partecipanti scelti nei filtri
-// Produce: la griglia sale x mezz'ore; clic su una cella libera apre il modulo già compilato
-// Regola:  nessun endpoint di disponibilità: sale + prenotazioni del giorno, combinate in grid.ts;
-//          la query delle prenotazioni si rilegge ogni 30 s
-// Vedi:    features/bookings/grid.ts, features/bookings/availability-grid.tsx
-
 "use client";
 
 import { useState } from "react";
@@ -26,6 +19,11 @@ import { TimeSelect } from "@/components/ui/time-select";
 import { TimeZoneNote } from "@/components/ui/time-zone-note";
 import { HALF_HOURS } from "@/lib/coworking-time";
 
+/**
+ * La pagina principale: mostra le sale libere di un giorno e permette di prenotare dalla griglia.
+ * Non esiste un endpoint di disponibilità: la pagina legge sale e prenotazioni del giorno e le
+ * combina con `buildGrid`. Le prenotazioni si rileggono ogni 30 secondi.
+ */
 export default function AvailabilityPage() {
   const [day, setDay] = useState(() => today());
   const [start, setStart] = useState("");
@@ -37,7 +35,7 @@ export default function AvailabilityPage() {
   const { from, to } = daysRange(day);
   const bookings = useBookings(from, to, { poll: true });
 
-  // La fascia filtra solo quando è completa e ha senso; altrimenti si vedono tutte le sale.
+  // La fascia filtra solo quando è completa e la fine viene dopo l'inizio; altrimenti si vedono tutte le sale.
   const range = start && end && end > start ? { start, end } : undefined;
 
   const filters = (
@@ -79,7 +77,7 @@ export default function AvailabilityPage() {
     <>
       <PageHeader
         title="Disponibilità"
-        help="Scegli giorno, fascia e partecipanti: restano le sale libere. Clic su una cella libera per prenotare."
+        help="Scegli giorno, fascia oraria e numero di persone: restano solo le sale libere. Fai clic su una cella libera per prenotarla."
         tools={
           <Button
             variant="contained"
@@ -110,7 +108,7 @@ export default function AvailabilityPage() {
             range,
           })}
           onSelect={(room, slot) => {
-            // Dentro la fascia cercata si propone la fascia intera, altrimenti un'ora da quella cella.
+            // Se la cella è dentro la fascia cercata, il modulo propone tutta la fascia; altrimenti un'ora a partire dalla cella.
             const inRange = range && slot >= range.start && slot < range.end;
             const next = HALF_HOURS[Math.min(HALF_HOURS.indexOf(slot) + 2, HALF_HOURS.length - 1)];
             setDraft({
@@ -132,6 +130,7 @@ export default function AvailabilityPage() {
   );
 }
 
+/** La griglia, oppure lo stato vuoto se nessuna sala corrisponde ai filtri. */
 function Grid({
   grid,
   onSelect,
@@ -145,7 +144,7 @@ function Grid({
     return (
       <EmptyState
         message="Nessuna sala libera con questi filtri."
-        action={<Button onClick={onClearFilters}>Cambia orario</Button>}
+        action={<Button onClick={onClearFilters}>Mostra tutte le sale</Button>}
       />
     );
   return <AvailabilityGrid grid={grid} onSelect={onSelect} />;

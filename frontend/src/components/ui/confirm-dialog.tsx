@@ -10,7 +10,10 @@ import DialogTitle from "@mui/material/DialogTitle";
 import Stack from "@mui/material/Stack";
 import { errorMessage } from "@/lib/error-messages";
 
-// Conferma di un'azione che non si annulla; se l'azione fallisce, l'errore resta nella finestra.
+/**
+ * Chiede conferma prima di un'azione che non si può annullare, come una cancellazione.
+ * Se l'azione fallisce, il messaggio d'errore compare nella finestra, che resta aperta.
+ */
 export function ConfirmDialog({
   title,
   message,

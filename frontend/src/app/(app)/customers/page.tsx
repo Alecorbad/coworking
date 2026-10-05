@@ -25,12 +25,13 @@ import { type Customer, useCustomers, useDeleteCustomer } from "@/features/custo
 import { CustomerDialog } from "@/features/customers/customer-dialog";
 import { formatDate } from "@/lib/coworking-time";
 
-// Finestra aperta: nessuna, nuovo cliente, modifica o cancellazione di un cliente.
+// Quale finestra è aperta: nessuna, nuovo cliente, modifica o cancellazione di un cliente.
 type Open =
   | { kind: "create" }
   | { kind: "edit"; customer: Customer }
   | { kind: "delete"; customer: Customer };
 
+/** L'anagrafica dei clienti: elenco, registrazione, modifica e cancellazione. */
 export default function CustomersPage() {
   const customers = useCustomers();
   const remove = useDeleteCustomer();
@@ -49,7 +50,11 @@ export default function CustomersPage() {
 
   return (
     <>
-      <PageHeader title="Clienti" help="L'anagrafica di chi prenota le sale." tools={newCustomer} />
+      <PageHeader
+        title="Clienti"
+        help="Le persone a nome delle quali si prenotano le sale."
+        tools={newCustomer}
+      />
       {customers.isPending && <LoadingState />}
       {customers.isError && (
         <ErrorState error={customers.error} onRetry={() => void customers.refetch()} />
@@ -112,7 +117,7 @@ export default function CustomersPage() {
       {open?.kind === "delete" && (
         <ConfirmDialog
           title="Eliminare il cliente?"
-          message={`${open.customer.firstName} ${open.customer.lastName} sparirà dall'anagrafica.`}
+          message={`${open.customer.firstName} ${open.customer.lastName} sarà tolto dall'anagrafica. Si può eliminare solo un cliente senza prenotazioni.`}
           confirmLabel="Elimina"
           pending={remove.isPending}
           error={remove.error}

@@ -1,9 +1,3 @@
-// Ruolo:   traduce i token in tema MUI chiaro e scuro
-// Riceve:  i valori di theme/tokens.ts
-// Produce: il tema con tutti gli override dei componenti
-// Regola:  le pagine non decidono stile: leggono solo il tema
-// Vedi:    theme/tokens.ts, app/providers.tsx
-
 import { createTheme, type Shadows } from "@mui/material/styles";
 import { itIT } from "@mui/material/locale";
 import {
@@ -18,17 +12,19 @@ import {
   spacingUnit,
 } from "./tokens";
 
-// px -> rem, così il testo segue la dimensione scelta dall'utente nel browser.
+// Converte i px in rem, così il testo segue la dimensione scelta dall'utente nel browser.
 const rem = (px: number) => `${px / 16}rem`;
 
-// MUI usa le ombre 8 (menu, popover) e 24 (finestre): sono le uniche accese.
+// MUI usa l'ombra 8 per menu e popover e la 24 per le finestre: sono le sole accese, le altre sono spente.
 const shadows = Array.from({ length: 25 }, (_, i) =>
   i === 8 || i === 24 ? overlayShadow : "none",
 ) as Shadows;
 
-// Tema chiaro e scuro; variabili CSS e selezione automatica secondo la preferenza del
-// sistema operativo. Le pagine non decidono stile: tutti gli override dei componenti MUI
-// stanno qui.
+/**
+ * Il tema MUI dell'app, chiaro e scuro, costruito dai valori di `tokens.ts`. Si sceglie da solo in
+ * base alla preferenza del sistema operativo. Le pagine non decidono mai lo stile: tutte le
+ * personalizzazioni dei componenti MUI stanno qui.
+ */
 export const theme = createTheme(
   {
     cssVariables: true,
@@ -167,8 +163,8 @@ export const theme = createTheme(
         defaultProps: { variant: "outlined" },
         styleOverrides: { root: { fontSize: rem(fontSize.body), alignItems: "center" } },
       },
-      // Nell'app le etichette segnano uno stato «spento» (sala disattivata): bordo tratteggiato,
-      // e il testo dice lo stato, così non dipende dal colore.
+      // Nell'app le etichette segnano uno stato «spento», come una sala disattivata: bordo tratteggiato,
+      // e il testo dice lo stato, così non si capisce solo dal colore.
       MuiChip: {
         defaultProps: { size: "small", variant: "outlined" },
         styleOverrides: {

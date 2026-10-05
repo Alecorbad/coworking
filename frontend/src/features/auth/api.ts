@@ -1,16 +1,13 @@
-// Ruolo:   hook dell'accesso: chi sono, entra, esci
-// Riceve:  le credenziali del modulo di accesso
-// Produce: la query `me` in cache e le mutazioni di login e logout
-// Regola:  `me` è la sola fonte di verità sull'essere collegati
-// Vedi:    app/providers.tsx, components/layout/app-shell.tsx
-
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/client";
 import { unwrap } from "@/lib/api/unwrap";
 
+/** Chiave della query «chi è collegato»: è l'unica fonte di verità sulla sessione. */
 export const meQueryKey = ["auth", "me"] as const;
 
-// Chi è collegato. Un 401 è la risposta normale per "nessuna sessione": niente retry.
+/**
+ * Chi è collegato. Senza sessione l'API risponde 401: è la risposta normale, quindi non si riprova.
+ */
 export function useMe() {
   return useQuery({
     queryKey: meQueryKey,
@@ -20,6 +17,7 @@ export function useMe() {
   });
 }
 
+/** Accesso con email e password; se riesce, salva subito in cache chi è collegato. */
 export function useLogin() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -29,6 +27,7 @@ export function useLogin() {
   });
 }
 
+/** Uscita; dopo, svuota la cache perché non resti nessun dato della sessione. */
 export function useLogout() {
   const queryClient = useQueryClient();
   return useMutation({

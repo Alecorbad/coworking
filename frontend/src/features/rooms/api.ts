@@ -1,9 +1,3 @@
-// Ruolo:   hook delle sale: elenco e modifiche
-// Riceve:  i valori letti dal modulo della sala
-// Produce: la query ["rooms"] e le mutazioni di creazione, modifica e cancellazione
-// Regola:  dopo un salvataggio, riuscito o respinto con 409, l'elenco si rilegge
-// Vedi:    features/rooms/room-dialog.tsx, app/(app)/rooms/page.tsx
-
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api/client";
 import { useRefreshAfterSave } from "@/lib/api/refresh";
@@ -14,8 +8,10 @@ export type Room = components["schemas"]["RoomResponse"];
 export type CreateRoom = components["schemas"]["CreateRoomRequest"];
 export type UpdateRoom = components["schemas"]["UpdateRoomRequest"];
 
+/** Chiave della query delle sale. */
 export const roomsQueryKey = ["rooms"] as const;
 
+/** Tutte le sale, comprese quelle disattivate. */
 export function useRooms() {
   return useQuery({
     queryKey: roomsQueryKey,
@@ -23,6 +19,7 @@ export function useRooms() {
   });
 }
 
+/** Crea una sala; dopo il salvataggio, o un 409, l'elenco si rilegge. */
 export function useCreateRoom() {
   return useMutation({
     mutationFn: (body: CreateRoom) => unwrap(api.POST("/api/rooms", { body })),
@@ -30,6 +27,7 @@ export function useCreateRoom() {
   });
 }
 
+/** Modifica la sala indicata, anche per disattivarla; poi l'elenco si rilegge. */
 export function useUpdateRoom(id: number) {
   return useMutation({
     mutationFn: (body: UpdateRoom) =>
@@ -38,6 +36,7 @@ export function useUpdateRoom(id: number) {
   });
 }
 
+/** Cancella una sala; poi l'elenco si rilegge. */
 export function useDeleteRoom() {
   return useMutation({
     mutationFn: (id: number) => unwrap(api.DELETE("/api/rooms/{id}", { params: { path: { id } } })),

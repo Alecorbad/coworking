@@ -1,9 +1,3 @@
-// Ruolo:   struttura di ogni pagina dopo l'accesso: barra, menu, contenuto
-// Riceve:  le pagine come children
-// Produce: barra con menu e uscita, oppure caricamento/errore/redirect a /login
-// Regola:  senza sessione nessun contenuto viene mostrato
-// Vedi:    features/auth/api.ts, components/ui/*-state.tsx
-
 "use client";
 
 import { useEffect, type ReactNode } from "react";
@@ -37,6 +31,11 @@ const menu = [
   { href: "/rooms", label: "Sale", Icon: MeetingRoomOutlinedIcon },
 ] as const;
 
+/**
+ * La struttura di ogni pagina dopo l'accesso: barra con menu, fuso e uscita, poi il contenuto.
+ * Prima controlla la sessione: finché non sa chi è collegato mostra il caricamento, e senza
+ * sessione porta alla pagina di accesso, senza mai mostrare il contenuto.
+ */
 export function AppShell({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();

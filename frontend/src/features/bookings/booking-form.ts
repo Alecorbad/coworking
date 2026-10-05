@@ -1,7 +1,10 @@
 import { toInstant } from "@/lib/coworking-time";
 import type { CreateBooking } from "./api";
 
-/** Valori del modulo della prenotazione; giorno e orari sono quelli del coworking. */
+/**
+ * Legge i campi del modulo della prenotazione e li porta nella forma dell'API. Giorno e orari si
+ * intendono nell'ora di Roma e diventano istanti con lo scarto giusto.
+ */
 export function readBookingForm(form: FormData): CreateBooking {
   const day = String(form.get("day"));
   return {

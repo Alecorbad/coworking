@@ -1,10 +1,3 @@
-// Ruolo:   modulo di una nuova prenotazione, aperto dalla griglia o dal pulsante della pagina
-// Riceve:  i valori iniziali (sala, giorno, orari)
-// Produce: la richiesta all'API; si chiude da sola quando il salvataggio riesce
-// Regola:  un 409 (sala o cliente già occupati) compare in cima al modulo, che resta aperto
-//          con i dati inseriti; intanto la griglia si rilegge e mostra chi ha preceduto
-// Vedi:    features/bookings/api.ts, features/bookings/booking-form.ts
-
 "use client";
 
 import type { FormEvent } from "react";
@@ -25,8 +18,15 @@ import { TimeZoneNote } from "@/components/ui/time-zone-note";
 import { useCreateBooking } from "./api";
 import { readBookingForm } from "./booking-form";
 
+/** I valori con cui si apre il modulo: dalla griglia arrivano sala, giorno e orario della cella. */
 export type BookingDraft = { roomId?: number; day: string; start?: string; end?: string };
 
+/**
+ * Modulo di una nuova prenotazione, aperto dalla griglia o dal pulsante della pagina; si chiude da
+ * solo quando il salvataggio riesce. Se il server risponde con un conflitto (sala o cliente già
+ * occupati), l'errore compare in cima e il modulo resta aperto con i dati inseriti; intanto la
+ * griglia si rilegge e mostra chi ha preceduto.
+ */
 export function BookingDialog({ draft, onClose }: { draft: BookingDraft; onClose: () => void }) {
   const create = useCreateBooking();
   const customers = useCustomers();
@@ -40,7 +40,7 @@ export function BookingDialog({ draft, onClose }: { draft: BookingDraft; onClose
     });
   };
 
-  // I menu si riempiono quando arrivano clienti e sale: fino ad allora il modulo aspetta.
+  // Finché clienti e sale non sono arrivati, i menu sarebbero vuoti: il modulo aspetta.
   const ready = customers.isSuccess && rooms.isSuccess;
 
   return (
@@ -107,7 +107,7 @@ export function BookingDialog({ draft, onClose }: { draft: BookingDraft; onClose
             </Stack>
           ) : (
             <Alert severity="info" role="status">
-              Caricamento di clienti e sale…
+              Sto caricando clienti e sale…
             </Alert>
           )}
         </DialogContent>

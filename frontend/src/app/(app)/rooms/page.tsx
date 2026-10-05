@@ -24,9 +24,10 @@ import { type Room, useDeleteRoom, useRooms } from "@/features/rooms/api";
 import { RoomDialog } from "@/features/rooms/room-dialog";
 import { formatTime } from "@/lib/coworking-time";
 
-// Finestra aperta: nessuna, nuova sala, modifica o cancellazione di una sala.
+// Quale finestra è aperta: nessuna, nuova sala, modifica o cancellazione di una sala.
 type Open = { kind: "create" } | { kind: "edit"; room: Room } | { kind: "delete"; room: Room };
 
+/** L'elenco delle sale, con creazione, modifica (anche per disattivarle) e cancellazione. */
 export default function RoomsPage() {
   const rooms = useRooms();
   const remove = useDeleteRoom();
@@ -47,7 +48,7 @@ export default function RoomsPage() {
     <>
       <PageHeader
         title="Sale"
-        help="Le sale riunioni del coworking. Una sala disattivata non accetta nuove prenotazioni; quelle esistenti restano."
+        help="Le sale riunioni del coworking. Una sala disattivata non accetta nuove prenotazioni, ma quelle esistenti restano."
         tools={newRoom}
       />
       {rooms.isPending && <LoadingState />}
@@ -107,7 +108,7 @@ export default function RoomsPage() {
       {open?.kind === "delete" && (
         <ConfirmDialog
           title="Eliminare la sala?"
-          message={`${open.room.name} sparirà dall'elenco. Se vuoi solo smettere di prenotarla, disattivala.`}
+          message={`${open.room.name} sarà tolta dall'elenco. Se vuoi solo smettere di prenotarla, disattivala invece di eliminarla.`}
           confirmLabel="Elimina"
           pending={remove.isPending}
           error={remove.error}

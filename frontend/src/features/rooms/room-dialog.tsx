@@ -1,9 +1,3 @@
-// Ruolo:   modulo della sala, per crearla o modificarla (anche disattivarla)
-// Riceve:  la sala da modificare, oppure nessuna per crearne una
-// Produce: la richiesta all'API; si chiude da sola quando il salvataggio riesce
-// Regola:  se l'API rifiuta (nome già preso), il modulo resta aperto con i dati inseriti
-// Vedi:    features/rooms/api.ts, features/rooms/room-form.ts
-
 "use client";
 
 import type { FormEvent } from "react";
@@ -24,6 +18,11 @@ import { TimeSelect } from "@/components/ui/time-select";
 import { type Room, useCreateRoom, useUpdateRoom } from "./api";
 import { readRoomForm } from "./room-form";
 
+/**
+ * Modulo della sala: senza `room` ne crea una nuova, con `room` la modifica (e può disattivarla).
+ * Si chiude da solo quando il salvataggio riesce; se il server rifiuta (ad esempio nome già usato),
+ * resta aperto con i dati inseriti e il messaggio d'errore.
+ */
 export function RoomDialog({ room, onClose }: { room?: Room; onClose: () => void }) {
   const create = useCreateRoom();
   const update = useUpdateRoom(room?.id ?? 0);
@@ -53,7 +52,7 @@ export function RoomDialog({ room, onClose }: { room?: Room; onClose: () => void
               autoFocus
               error={invalid("name")}
               helperText={
-                invalid("name") ? "Inserisci un nome di massimo 100 caratteri." : undefined
+                invalid("name") ? "Inserisci un nome, al massimo 100 caratteri." : undefined
               }
               slotProps={{ htmlInput: { maxLength: 100 } }}
             />
@@ -67,7 +66,7 @@ export function RoomDialog({ room, onClose }: { room?: Room; onClose: () => void
               helperText={
                 invalid("capacity")
                   ? "Da 1 a 500 persone."
-                  : "Partecipanti massimi per prenotazione."
+                  : "Quante persone può ospitare una prenotazione."
               }
               slotProps={{ htmlInput: { min: 1, max: 500, step: 1 } }}
             />

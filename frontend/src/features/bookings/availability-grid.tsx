@@ -1,10 +1,3 @@
-// Ruolo:   disegna la griglia della disponibilità: una riga per sala, una colonna per mezz'ora
-// Riceve:  il modello di grid.ts e cosa fare al clic su una cella libera
-// Produce: una tabella; le prenotazioni occupano più celle (colSpan), le celle libere sono pulsanti
-// Regola:  lo stato non si legge solo dal colore: cognome sulla prenotazione, tratteggio per
-//          la sala chiusa, celle spente per il passato, etichetta «Disattivata» sulla sala
-// Vedi:    features/bookings/grid.ts, app/(app)/availability/page.tsx
-
 "use client";
 
 import ButtonBase from "@mui/material/ButtonBase";
@@ -24,8 +17,16 @@ import { formatTimeRange } from "@/lib/coworking-time";
 import { radius, sizes } from "@/theme/tokens";
 import type { GridModel, Segment } from "./grid";
 
+// Stile comune a tutte le celle delle mezz'ore.
 const cell = { p: 0, height: sizes.gridRow, borderLeft: 1, borderColor: "divider" } as const;
 
+/**
+ * Disegna la griglia della disponibilità costruita da `buildGrid`: una riga per sala, una colonna
+ * per mezz'ora. Una prenotazione occupa più celle; ogni cella libera è un pulsante che apre il modulo.
+ *
+ * Lo stato non si capisce mai solo dal colore: la prenotazione mostra il cognome, una sala chiusa
+ * è tratteggiata, il passato è spento, una sala disattivata ha l'etichetta «Disattivata».
+ */
 export function AvailabilityGrid({
   grid,
   onSelect,
@@ -40,7 +41,7 @@ export function AvailabilityGrid({
           <TableRow>
             <TableCell sx={{ width: 160 }}>Sala</TableCell>
             {grid.slots.map((slot) => (
-              // Etichetta solo sulle ore intere: le mezz'ore hanno la colonna, non il testo.
+              // Si scrivono solo le ore intere: le mezz'ore hanno la loro colonna, ma senza testo.
               <TableCell key={slot} sx={{ px: 1 }} aria-label={slot}>
                 {slot.endsWith(":00") ? slot : ""}
               </TableCell>
@@ -77,6 +78,7 @@ export function AvailabilityGrid({
   );
 }
 
+/** Una cella della griglia: prenotazione, mezz'ora libera da cliccare, oppure cella non prenotabile. */
 function SegmentCell({
   segment,
   room,
@@ -125,7 +127,7 @@ function SegmentCell({
     );
   }
 
-  // Chiusa: tratteggio. Passata o sala disattivata: cella spenta.
+  // Fuori orario: tratteggio. Già passata o di una sala disattivata: cella spenta.
   return (
     <TableCell
       sx={{

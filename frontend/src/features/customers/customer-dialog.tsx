@@ -1,9 +1,3 @@
-// Ruolo:   modulo del cliente, per registrarlo o modificarlo
-// Riceve:  il cliente da modificare, oppure nessuno per registrarne uno
-// Produce: la richiesta all'API; si chiude da sola quando il salvataggio riesce
-// Regola:  se l'API rifiuta (email già presa), il modulo resta aperto con i dati inseriti
-// Vedi:    features/customers/api.ts
-
 "use client";
 
 import type { FormEvent } from "react";
@@ -19,6 +13,11 @@ import { hasFieldError } from "@/lib/api/api-error";
 import { errorMessage } from "@/lib/error-messages";
 import { type Customer, useCreateCustomer, useUpdateCustomer } from "./api";
 
+/**
+ * Modulo del cliente: senza `customer` ne registra uno nuovo, con `customer` lo modifica. Si chiude
+ * da solo quando il salvataggio riesce; se il server rifiuta (ad esempio email già usata), resta
+ * aperto con i dati inseriti e il messaggio d'errore.
+ */
 export function CustomerDialog({
   customer,
   onClose,
@@ -60,7 +59,7 @@ export function CustomerDialog({
               autoComplete="off"
               error={invalid("firstName")}
               helperText={
-                invalid("firstName") ? "Inserisci il nome, massimo 100 caratteri." : undefined
+                invalid("firstName") ? "Inserisci il nome, al massimo 100 caratteri." : undefined
               }
               slotProps={{ htmlInput: { maxLength: 100 } }}
             />
@@ -72,7 +71,7 @@ export function CustomerDialog({
               autoComplete="off"
               error={invalid("lastName")}
               helperText={
-                invalid("lastName") ? "Inserisci il cognome, massimo 100 caratteri." : undefined
+                invalid("lastName") ? "Inserisci il cognome, al massimo 100 caratteri." : undefined
               }
               slotProps={{ htmlInput: { maxLength: 100 } }}
             />

@@ -12,12 +12,13 @@ import Typography from "@mui/material/Typography";
 import { useLogin } from "@/features/auth/api";
 import { errorMessage } from "@/lib/error-messages";
 
+/** La pagina di accesso: l'unica che si vede senza sessione. Dopo l'accesso porta alla Disponibilità. */
 export default function LoginPage() {
   const router = useRouter();
   const login = useLogin();
 
-  // Campi non controllati e nessuna validazione lato client oltre a `required`: i controlli veri
-  // li fa l'API e il messaggio arriva da error-messages.
+  // I campi si leggono solo all'invio, e il browser controlla soltanto che siano compilati:
+  // le verifiche vere le fa l'API, e il messaggio d'errore arriva da error-messages.
   const onSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const form = new FormData(event.currentTarget);

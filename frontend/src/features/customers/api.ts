@@ -1,9 +1,3 @@
-// Ruolo:   hook dei clienti: elenco, dettaglio e modifiche
-// Riceve:  i valori letti dal modulo del cliente
-// Produce: le query ["customers"] e ["customers", id], le mutazioni di creazione, modifica e cancellazione
-// Regola:  dopo un salvataggio, riuscito o respinto con 409, elenco e dettaglio si rileggono
-// Vedi:    features/customers/customer-dialog.tsx, app/(app)/customers/
-
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api/client";
 import { useRefreshAfterSave } from "@/lib/api/refresh";
@@ -14,9 +8,10 @@ export type Customer = components["schemas"]["CustomerResponse"];
 export type CreateCustomer = components["schemas"]["CreateCustomerRequest"];
 export type UpdateCustomer = components["schemas"]["UpdateCustomerRequest"];
 
-// Prefisso comune: invalidarlo rilegge sia l'elenco sia ogni dettaglio.
+/** Chiave comune delle query dei clienti: invalidarla rilegge sia l'elenco sia ogni dettaglio. */
 export const customersQueryKey = ["customers"] as const;
 
+/** Tutti i clienti, in ordine di cognome. */
 export function useCustomers() {
   return useQuery({
     queryKey: customersQueryKey,
@@ -24,6 +19,7 @@ export function useCustomers() {
   });
 }
 
+/** Un cliente, per la pagina di dettaglio. */
 export function useCustomer(id: number) {
   return useQuery({
     queryKey: [...customersQueryKey, id],
@@ -31,6 +27,7 @@ export function useCustomer(id: number) {
   });
 }
 
+/** Registra un cliente; dopo il salvataggio, o un 409, elenco e dettagli si rileggono. */
 export function useCreateCustomer() {
   return useMutation({
     mutationFn: (body: CreateCustomer) => unwrap(api.POST("/api/customers", { body })),
@@ -38,6 +35,7 @@ export function useCreateCustomer() {
   });
 }
 
+/** Modifica il cliente indicato; poi elenco e dettagli si rileggono. */
 export function useUpdateCustomer(id: number) {
   return useMutation({
     mutationFn: (body: UpdateCustomer) =>
@@ -46,6 +44,7 @@ export function useUpdateCustomer(id: number) {
   });
 }
 
+/** Cancella un cliente; poi elenco e dettagli si rileggono. */
 export function useDeleteCustomer() {
   return useMutation({
     mutationFn: (id: number) =>

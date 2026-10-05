@@ -1,9 +1,3 @@
-// Ruolo:   elenco delle prenotazioni di un periodo, con l'annullamento
-// Riceve:  primo e ultimo giorno scelti nei filtri (al massimo 31 giorni)
-// Produce: la tabella delle prenotazioni, annullate comprese
-// Regola:  i giorni sono quelli del coworking; la fascia va da inizio del primo a fine dell'ultimo
-// Vedi:    features/bookings/bookings-table.tsx
-
 "use client";
 
 import { useState } from "react";
@@ -17,6 +11,11 @@ import { useBookings } from "@/features/bookings/api";
 import { BookingsTable } from "@/features/bookings/bookings-table";
 import { addDays, daysRange, today } from "@/lib/coworking-time";
 
+/**
+ * L'elenco delle prenotazioni di un periodo (al massimo 31 giorni), comprese le annullate, con la
+ * possibilità di annullare. I giorni sono quelli del coworking: il periodo va dalla mezzanotte del
+ * primo giorno a quella dopo l'ultimo.
+ */
 export default function BookingsPage() {
   const [first, setFirst] = useState(() => today());
   const [last, setLast] = useState(() => addDays(today(), 6));

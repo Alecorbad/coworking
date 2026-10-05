@@ -1,9 +1,3 @@
-// Ruolo:   impianto comune: cache dei dati, tema, gestione della sessione persa
-// Riceve:  l'albero delle pagine
-// Produce: QueryClient, tema chiaro/scuro e reset dello stato utente al primo 401
-// Regola:  un 401 diverso da INVALID_CREDENTIALS riporta l'utente alla pagina di accesso
-// Vedi:    components/layout/app-shell.tsx, features/auth/api.ts
-
 "use client";
 
 import { useState, type ReactNode } from "react";
@@ -20,12 +14,16 @@ import { meQueryKey } from "@/features/auth/api";
 import { ApiError } from "@/lib/api/api-error";
 import { theme } from "@/theme/theme";
 
-// Sessione scaduta o mancante: rileggere "chi sono" fa tornare il gate alla pagina di accesso.
-// INVALID_CREDENTIALS è un 401 del login stesso e resta un errore del modulo.
+// Vero se l'errore dice che la sessione è scaduta o manca: rileggere "chi sono" riporta al login.
+// INVALID_CREDENTIALS è un 401 del modulo di accesso, e lì resta.
 function isSessionLost(error: unknown): boolean {
   return error instanceof ApiError && error.status === 401 && error.code !== "INVALID_CREDENTIALS";
 }
 
+/**
+ * Crea la cache dei dati con la gestione della sessione persa: se una richiesta qualsiasi riceve
+ * un 401, si rilegge "chi è collegato" e la shell riporta alla pagina di accesso.
+ */
 export function createQueryClient(): QueryClient {
   const onError = (error: unknown) => {
     if (isSessionLost(error)) void client.invalidateQueries({ queryKey: meQueryKey });
@@ -33,8 +31,8 @@ export function createQueryClient(): QueryClient {
   const client: QueryClient = new QueryClient({
     queryCache: new QueryCache({
       onError: (error, query) => {
-        // Il 401 di me deve restare visibile al gate: invalidarlo qui
-        // rilancerebbe la stessa richiesta e impedirebbe il redirect al login.
+        // Il 401 della query "chi è collegato" va lasciato com'è, perché la shell lo legga: invalidarlo
+        // qui rilancerebbe la stessa richiesta all'infinito, senza mai arrivare al login.
         if (query.queryHash !== hashKey(meQueryKey)) onError(error);
       },
     }),
@@ -43,9 +41,10 @@ export function createQueryClient(): QueryClient {
   return client;
 }
 
+/** Avvolge tutte le pagine: cache dei dati, tema chiaro o scuro e stili di base. */
 export function Providers({ children }: { children: ReactNode }) {
-  // Un QueryClient per sessione del browser: creato nello stato, non a livello
-  // di modulo, per non condividere la cache tra richieste diverse sul server.
+  // La cache nasce nello stato del componente, non a livello di modulo: così sul server due richieste
+  // diverse non condividono mai gli stessi dati.
   const [queryClient] = useState(createQueryClient);
 
   return (

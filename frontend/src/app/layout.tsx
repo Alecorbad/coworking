@@ -10,6 +10,7 @@ export const metadata: Metadata = {
   description: "Prenotazione sale riunioni",
 };
 
+/** La pagina HTML di base: lingua italiana, carattere Rubik, cache degli stili MUI e Providers. */
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="it">

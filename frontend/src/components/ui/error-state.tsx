@@ -2,7 +2,7 @@ import Alert from "@mui/material/Alert";
 import Button from "@mui/material/Button";
 import { errorMessage } from "@/lib/error-messages";
 
-// Stato d'errore: messaggio scelto dal code e "Riprova" quando c'è da riprovare.
+/** Stato d'errore di una pagina: il messaggio in italiano e, se c'è `onRetry`, il pulsante «Riprova». */
 export function ErrorState({ error, onRetry }: { error: unknown; onRetry?: () => void }) {
   return (
     <Alert

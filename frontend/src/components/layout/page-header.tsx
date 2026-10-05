@@ -5,7 +5,10 @@ import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import type { ReactNode } from "react";
 
-// Unica intestazione di pagina: titolo e aiuto a sinistra, strumenti a destra.
+/**
+ * L'intestazione usata da tutte le pagine: titolo e aiuto a sinistra, pulsanti a destra.
+ * L'aiuto compare come suggerimento sull'icona del punto di domanda.
+ */
 export function PageHeader({
   title,
   help,

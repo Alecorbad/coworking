@@ -33,7 +33,7 @@ export interface paths {
             };
         };
         put?: never;
-        /** Crea una sala, attiva. */
+        /** Crea una sala, già attiva. Il nome deve essere libero. */
         post: {
             parameters: {
                 query?: never;
@@ -123,7 +123,7 @@ export interface paths {
                 };
             };
         };
-        /** Modifica una sala, anche per disattivarla o riattivarla. */
+        /** Modifica una sala; serve anche a disattivarla o a riattivarla. */
         put: {
             parameters: {
                 query?: never;
@@ -180,7 +180,7 @@ export interface paths {
             };
         };
         post?: never;
-        /** Cancella una sala senza prenotazioni; altrimenti va disattivata. */
+        /** Cancella una sala che non ha mai avuto prenotazioni. Altrimenti risponde 409: va disattivata. */
         delete: {
             parameters: {
                 query?: never;
@@ -253,7 +253,7 @@ export interface paths {
             };
         };
         put?: never;
-        /** Registra un cliente. */
+        /** Registra un cliente. L'email deve essere libera. */
         post: {
             parameters: {
                 query?: never;
@@ -400,7 +400,7 @@ export interface paths {
             };
         };
         post?: never;
-        /** Cancella un cliente senza prenotazioni. */
+        /** Cancella un cliente che non ha mai avuto prenotazioni. Altrimenti risponde 409. */
         delete: {
             parameters: {
                 query?: never;
@@ -452,7 +452,7 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Prenotazioni che intersecano la fascia [from, to), annullate comprese, al massimo 31 giorni.
+         * Le prenotazioni che toccano la fascia [from, to), annullate comprese, per al massimo 31 giorni.
          *     Insieme all'elenco delle sale basta a disegnare la griglia della disponibilità.
          */
         get: {
@@ -488,7 +488,7 @@ export interface paths {
             };
         };
         put?: never;
-        /** Prenota una sala per un cliente. */
+        /** Prenota una sala per un cliente, dopo aver controllato tutte le regole. */
         post: {
             parameters: {
                 query?: never;
@@ -595,7 +595,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Annulla una prenotazione non ancora cominciata; resta visibile come Cancelled. */
+        /** Annulla una prenotazione non ancora cominciata. Resta visibile, con stato Cancelled. */
         post: {
             parameters: {
                 query?: never;
@@ -649,7 +649,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Tutte le prenotazioni di un cliente, annullate comprese. */
+        /** Tutte le prenotazioni di un cliente, comprese quelle annullate. */
         get: {
             parameters: {
                 query?: never;
@@ -698,7 +698,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Apre la sessione: la risposta imposta il cookie HttpOnly. */
+        /** Apre la sessione. Se le credenziali sono giuste, la risposta imposta il cookie HttpOnly. */
         post: {
             parameters: {
                 query?: never;
@@ -758,7 +758,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Chiude la sessione. */
+        /** Chiude la sessione e cancella il cookie. */
         post: {
             parameters: {
                 query?: never;
@@ -799,7 +799,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Operatore della sessione corrente: il frontend lo usa per sapere se è autenticato. */
+        /** Chi è collegato. Il frontend lo chiama per sapere se c'è una sessione: senza, risponde 401. */
         get: {
             parameters: {
                 query?: never;
@@ -841,6 +841,7 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** @description Una prenotazione, con i nomi di sala e cliente già pronti da mostrare. */
         BookingResponse: {
             /**
              * Format: int32
@@ -863,91 +864,95 @@ export interface components {
             roomName: string;
             /**
              * Format: date-time
-             * @description Inizio, in UTC.
+             * @description Inizio della fascia, in UTC.
              */
             startsAt: string;
             /**
              * Format: date-time
-             * @description Fine esclusa, in UTC.
+             * @description Fine della fascia, in UTC, esclusa dall'intervallo.
              */
             endsAt: string;
             /**
              * Format: int32
-             * @description Partecipanti.
+             * @description Numero di partecipanti.
              */
             attendees: number;
-            /** @description Confirmed oppure Cancelled: le annullate restano visibili. */
+            /** @description Confirmed oppure Cancelled: anche le annullate restano visibili. */
             status: components["schemas"]["BookingStatus"];
             /**
              * Format: date-time
-             * @description Istante della registrazione, in UTC.
+             * @description Quando è stata registrata, in UTC.
              */
             createdAt: string;
             /**
              * Format: date-time
-             * @description Istante dell'annullamento, null se confermata.
+             * @description Quando è stata annullata, in UTC; null se è confermata.
              */
             cancelledAt: null | string;
         };
         /**
-         * @description Una prenotazione non si cancella: si annulla e resta visibile nello storico.
+         * @description Stato di una prenotazione. Nel JSON compare come testo ("Confirmed", "Cancelled").
          * @enum {unknown}
          */
         BookingStatus: "Confirmed" | "Cancelled";
+        /** @description Dati di una prenotazione nuova. */
         CreateBookingRequest: {
             /**
              * Format: int32
-             * @description Cliente che prenota.
+             * @description Cliente a nome del quale si prenota.
              */
             customerId: number;
             /**
              * Format: int32
-             * @description Sala prenotata; deve essere attiva.
+             * @description Sala da prenotare; deve essere attiva.
              */
             roomId: number;
             /**
              * Format: date-time
-             * @description Inizio, con fuso (ISO 8601), a passi di mezz'ora nell'ora del coworking.
+             * @description Inizio, con lo scarto dal fuso (ISO 8601), sull'ora o sulla mezz'ora nell'ora del coworking.
              */
             startsAt: string;
             /**
              * Format: date-time
-             * @description Fine esclusa, dopo l'inizio, nello stesso giorno e dentro gli orari della sala.
+             * @description Fine, esclusa: dopo l'inizio, nello stesso giorno e dentro gli orari della sala.
              */
             endsAt: string;
             /**
              * Format: int32
-             * @description Partecipanti, al massimo la capienza della sala.
+             * @description Numero di partecipanti, al massimo i posti della sala.
              */
             attendees: number;
         };
+        /** @description Dati di un cliente nuovo. */
         CreateCustomerRequest: {
             /** @description Nome. */
             firstName: string;
             /** @description Cognome. */
             lastName: string;
-            /** @description Unica senza distinguere maiuscole; si salva in minuscolo. */
+            /** @description Email unica, senza distinguere le maiuscole; si salva in minuscolo. */
             email: string;
         };
+        /** @description Dati di una sala nuova, che nasce attiva. */
         CreateRoomRequest: {
-            /** @description Nome mostrato nella griglia; unico. */
+            /** @description Nome mostrato nella griglia; deve essere unico. */
             name: string;
             /**
              * Format: int32
-             * @description Partecipanti massimi per prenotazione.
+             * @description Numero massimo di partecipanti a una prenotazione.
              */
             capacity: number;
             /**
              * Format: time
-             * @description Apertura, ora locale del coworking, a passi di mezz'ora.
+             * @description Ora di apertura, nell'ora locale del coworking, sull'ora o sulla mezz'ora.
              */
             openingTime: string;
             /**
              * Format: time
-             * @description Chiusura, dopo l'apertura, a passi di mezz'ora.
+             * @description Ora di chiusura, dopo l'apertura, sull'ora o sulla mezz'ora.
              */
             closingTime: string;
         };
+        /** @description Un cliente, come lo vede il frontend. */
         CustomerResponse: {
             /**
              * Format: int32
@@ -958,20 +963,24 @@ export interface components {
             firstName: string;
             /** @description Cognome. */
             lastName: string;
-            /** @description Email, in minuscolo. */
+            /** @description Email, sempre in minuscolo. */
             email: string;
             /**
              * Format: date-time
-             * @description Istante della registrazione, in UTC.
+             * @description Quando il cliente è stato registrato, in UTC.
              */
             registeredAt: string;
         };
+        /** @description Credenziali del modulo di accesso. */
         LoginRequest: {
+            /** @description Email della receptionist. */
             email: string;
+            /** @description Password in chiaro: viaggia solo dentro la richiesta e non si salva mai. */
             password: string;
         };
+        /** @description Chi è collegato in questa sessione. */
         MeResponse: {
-            /** @description Email con cui l'operatore ha fatto l'accesso. */
+            /** @description Email con cui la receptionist ha fatto l'accesso. */
             email: string;
         };
         ProblemDetails: {
@@ -982,6 +991,7 @@ export interface components {
             detail?: null | string;
             instance?: null | string;
         };
+        /** @description Una sala, come la vede il frontend. */
         RoomResponse: {
             /**
              * Format: int32
@@ -997,44 +1007,46 @@ export interface components {
             capacity: number;
             /**
              * Format: time
-             * @description Apertura, ora locale del coworking.
+             * @description Ora di apertura, nell'ora locale del coworking.
              */
             openingTime: string;
             /**
              * Format: time
-             * @description Chiusura, ora locale del coworking.
+             * @description Ora di chiusura, nell'ora locale del coworking.
              */
             closingTime: string;
-            /** @description false se la sala non accetta nuove prenotazioni. */
+            /** @description False se la sala è disattivata e non accetta nuove prenotazioni. */
             isActive: boolean;
         };
+        /** @description Nuovi dati di un cliente esistente. */
         UpdateCustomerRequest: {
             /** @description Nome. */
             firstName: string;
             /** @description Cognome. */
             lastName: string;
-            /** @description Unica senza distinguere maiuscole; si salva in minuscolo. */
+            /** @description Email unica, senza distinguere le maiuscole; si salva in minuscolo. */
             email: string;
         };
+        /** @description Nuovi dati di una sala esistente, compreso lo stato attiva o disattivata. */
         UpdateRoomRequest: {
-            /** @description Nome mostrato nella griglia; unico. */
+            /** @description Nome mostrato nella griglia; deve essere unico. */
             name: string;
             /**
              * Format: int32
-             * @description Partecipanti massimi per prenotazione.
+             * @description Numero massimo di partecipanti a una prenotazione.
              */
             capacity: number;
             /**
              * Format: time
-             * @description Apertura, ora locale del coworking, a passi di mezz'ora.
+             * @description Ora di apertura, nell'ora locale del coworking, sull'ora o sulla mezz'ora.
              */
             openingTime: string;
             /**
              * Format: time
-             * @description Chiusura, dopo l'apertura, a passi di mezz'ora.
+             * @description Ora di chiusura, dopo l'apertura, sull'ora o sulla mezz'ora.
              */
             closingTime: string;
-            /** @description false disattiva la sala: niente nuove prenotazioni, le esistenti restano. */
+            /** @description Con false la sala si disattiva: niente nuove prenotazioni, quelle esistenti restano. */
             isActive: boolean;
         };
     };

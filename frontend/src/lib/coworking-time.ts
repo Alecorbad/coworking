@@ -1,17 +1,16 @@
-// Ruolo:   tutte le date e gli orari dell'interfaccia, nel fuso del coworking, con Luxon
-// Riceve:  istanti ISO e orari "HH:mm:ss" dall'API, giorni "yyyy-MM-dd" e orari "HH:mm" dai campi
-// Produce: istanti ISO e orari da mandare all'API, testo per l'interfaccia
-// Regola:  ogni conversione usa il fuso del coworking: quello del browser non conta mai
-// Vedi:    features/bookings/grid.ts, components/ui/time-select.tsx
+/**
+ * Date e orari dell'interfaccia, sempre nel fuso del coworking. Il fuso del browser non conta mai:
+ * qualunque sia il computer, "le 9" sono le 9 di Roma.
+ */
 
 import { DateTime } from "luxon";
 
-/** Il coworking è a Roma: lo stesso valore di TimeZone nella configurazione del backend. */
+/** Il fuso del coworking, lo stesso che il backend legge dalla configurazione (`TimeZone`). */
 export const TIME_ZONE = "Europe/Rome";
 
 /**
- * Il fuso del coworking per l'interfaccia, ad esempio "Ora di Roma · UTC+2". Lo scarto dipende
- * dal giorno: +2 con l'ora legale, +1 d'inverno.
+ * Il fuso del coworking scritto per l'interfaccia, ad esempio "Ora di Roma · UTC+2".
+ * Lo scarto dipende dal giorno: +2 con l'ora legale, +1 d'inverno.
  */
 export function zoneLabel(now: Date = new Date()): string {
   return `Ora di Roma · ${DateTime.fromJSDate(now, { zone: TIME_ZONE }).toFormat("'UTC'Z")}`;
@@ -22,58 +21,58 @@ export function today(now: Date = new Date()): string {
   return DateTime.fromJSDate(now, { zone: TIME_ZONE }).toISODate()!;
 }
 
-/** Il giorno "yyyy-MM-dd" spostato di n giorni. */
+/** Lo stesso giorno ("yyyy-MM-dd") spostato avanti o indietro di `days` giorni. */
 export function addDays(day: string, days: number): string {
   return DateTime.fromISO(day).plus({ days }).toISODate()!;
 }
 
-/** Giorno e ora locali del coworking -> istante ISO con offset, quello che l'API riceve. */
+/** Trasforma giorno e ora del coworking nell'istante ISO, con lo scarto, che l'API si aspetta. */
 export function toInstant(day: string, time: string): string {
   return DateTime.fromISO(`${day}T${time}`, { zone: TIME_ZONE }).toISO()!;
 }
 
-/** Da inizio del primo giorno a inizio del giorno dopo l'ultimo: la fascia [from, to). */
+/** La fascia [from, to) che copre i giorni indicati: dalla mezzanotte del primo a quella dopo l'ultimo. */
 export function daysRange(first: string, last: string = first): { from: string; to: string } {
   return { from: toInstant(first, "00:00"), to: toInstant(addDays(last, 1), "00:00") };
 }
 
-/** Ora locale di un istante, "HH:mm". */
+/** L'ora di Roma di un istante, ad esempio "09:30". */
 export function localTime(instant: string): string {
   return DateTime.fromISO(instant, { zone: TIME_ZONE }).toFormat("HH:mm");
 }
 
-/** Giorno locale di un istante, "yyyy-MM-dd". */
+/** Il giorno di Roma di un istante, ad esempio "2026-10-05". */
 export function localDay(instant: string): string {
   return DateTime.fromISO(instant, { zone: TIME_ZONE }).toISODate()!;
 }
 
-/** Le 48 mezz'ore di una giornata, "00:00" ... "23:30": le stesse celle della griglia. */
+/** Le 48 mezz'ore di una giornata, da "00:00" a "23:30": sono le colonne della griglia. */
 export const HALF_HOURS: readonly string[] = Array.from({ length: 48 }, (_, i) => {
   const hours = String(Math.floor(i / 2)).padStart(2, "0");
   return `${hours}:${i % 2 === 0 ? "00" : "30"}`;
 });
 
-/** "08:00:00" dell'API (TimeOnly) -> "08:00" per l'interfaccia e per i campi. */
+/** Accorcia un orario dell'API ("08:00:00") nella forma dei campi e dell'interfaccia ("08:00"). */
 export function formatTime(time: string): string {
   return time.slice(0, 5);
 }
 
-/** "08:00" di un campo -> "08:00:00", il formato TimeOnly dell'API. */
+/** Porta un orario dei campi ("08:00") nella forma che l'API si aspetta ("08:00:00"). */
 export function toTimeOnly(value: string): string {
   return `${value}:00`;
 }
 
-/** Data di un istante, ad esempio "1 set 2026". */
+/** La data di un istante, ad esempio "1 set 2026". */
 export function formatDate(instant: string): string {
   return DateTime.fromISO(instant, { zone: TIME_ZONE }).setLocale("it").toFormat("d LLL yyyy");
 }
 
-/** Giorno per l'interfaccia, ad esempio "lun 5 ott 2026". */
+/** Un giorno scritto per l'interfaccia, ad esempio "lun 5 ott 2026". */
 export function formatDay(day: string): string {
   return DateTime.fromISO(day).setLocale("it").toFormat("ccc d LLL yyyy");
 }
 
-/** Fascia di una prenotazione per l'interfaccia, ad esempio "09:00–10:30". */
+/** La fascia di una prenotazione, ad esempio "09:00–10:30". */
 export function formatTimeRange(startsAt: string, endsAt: string): string {
   return `${localTime(startsAt)}–${localTime(endsAt)}`;
 }

@@ -1,10 +1,3 @@
-// Ruolo:   tabella di prenotazioni con l'annullamento, per la pagina Prenotazioni e per il cliente
-// Riceve:  le prenotazioni da mostrare, se mostrare la colonna del cliente
-// Produce: righe con giorno, orario, sala, partecipanti, stato e il pulsante «Annulla»
-// Regola:  le annullate restano in elenco con l'etichetta «Annullata»; si annullano solo le
-//          confermate non ancora cominciate (il backend risponde 409 BOOKING_STARTED alle altre)
-// Vedi:    features/bookings/api.ts
-
 "use client";
 
 import { useState } from "react";
@@ -23,6 +16,12 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { formatDay, formatTimeRange, localDay } from "@/lib/coworking-time";
 import { type Booking, isCancellable, useCancelBooking } from "./api";
 
+/**
+ * Tabella di prenotazioni con il pulsante «Annulla», usata nella pagina Prenotazioni e nel dettaglio
+ * di un cliente (lì senza la colonna del cliente, con `showCustomer={false}`).
+ * Le annullate restano in elenco con l'etichetta «Annullata»; si possono annullare solo le
+ * prenotazioni confermate e non ancora cominciate.
+ */
 export function BookingsTable({
   bookings,
   showCustomer = true,
@@ -85,7 +84,7 @@ export function BookingsTable({
       {cancelling && (
         <ConfirmDialog
           title="Annullare la prenotazione?"
-          message={`${cancelling.roomName}, ${formatDay(localDay(cancelling.startsAt))} ${formatTimeRange(cancelling.startsAt, cancelling.endsAt)}: la prenotazione resterà in elenco come annullata e la sala tornerà libera.`}
+          message={`${cancelling.roomName}, ${formatDay(localDay(cancelling.startsAt))}, ${formatTimeRange(cancelling.startsAt, cancelling.endsAt)}. La prenotazione resterà nell'elenco come annullata e la fascia tornerà libera.`}
           confirmLabel="Sì, annulla"
           pending={cancel.isPending}
           error={cancel.error}

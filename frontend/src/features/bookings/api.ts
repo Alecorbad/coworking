@@ -1,10 +1,3 @@
-// Ruolo:   hook delle prenotazioni: fascia della griglia, prenotazioni di un cliente, creazione, annullamento
-// Riceve:  la fascia [from, to) come istanti ISO, l'id del cliente, i valori del modulo
-// Produce: le query ["bookings", ...] e le mutazioni di creazione e annullamento
-// Regola:  solo la griglia si rilegge da sola ogni 30 s; dopo un salvataggio, riuscito o
-//          respinto con 409, tutte le prenotazioni sullo schermo si rileggono
-// Vedi:    features/bookings/grid.ts, features/bookings/booking-dialog.tsx
-
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api/client";
 import { useRefreshAfterSave } from "@/lib/api/refresh";
@@ -14,22 +7,29 @@ import { unwrap } from "@/lib/api/unwrap";
 export type Booking = components["schemas"]["BookingResponse"];
 export type CreateBooking = components["schemas"]["CreateBookingRequest"];
 
-// Prefisso comune: invalidarlo rilegge griglia, elenco e prenotazioni di ogni cliente.
+/**
+ * Chiave comune delle query delle prenotazioni: invalidarla rilegge la griglia, l'elenco e le
+ * prenotazioni di ogni cliente.
+ */
 export const bookingsQueryKey = ["bookings"] as const;
 
+// Ogni quanto la griglia si rilegge da sola, per vedere le prenotazioni degli altri operatori.
 const gridPollingMs = 30_000;
 
-/** Prenotazioni che intersecano [from, to), annullate comprese. */
+/**
+ * Le prenotazioni che toccano la fascia [from, to), comprese le annullate.
+ * Con `poll` si rileggono ogni 30 secondi, ma solo mentre la scheda è visibile: serve alla griglia.
+ */
 export function useBookings(from: string, to: string, { poll = false } = {}) {
   return useQuery({
     queryKey: [...bookingsQueryKey, "range", from, to],
     queryFn: () => unwrap(api.GET("/api/bookings", { params: { query: { from, to } } })),
-    // Polling solo sulla griglia, e fermo quando la scheda non si vede.
     refetchInterval: poll ? gridPollingMs : false,
     refetchIntervalInBackground: false,
   });
 }
 
+/** Tutte le prenotazioni di un cliente, per la sua pagina di dettaglio. */
 export function useCustomerBookings(customerId: number) {
   return useQuery({
     queryKey: [...bookingsQueryKey, "customer", customerId],
@@ -38,6 +38,7 @@ export function useCustomerBookings(customerId: number) {
   });
 }
 
+/** Crea una prenotazione; dopo il salvataggio, o un 409, tutte le prenotazioni sullo schermo si rileggono. */
 export function useCreateBooking() {
   return useMutation({
     mutationFn: (body: CreateBooking) => unwrap(api.POST("/api/bookings", { body })),
@@ -45,6 +46,7 @@ export function useCreateBooking() {
   });
 }
 
+/** Annulla una prenotazione; poi tutte le prenotazioni sullo schermo si rileggono. */
 export function useCancelBooking() {
   return useMutation({
     mutationFn: (id: number) =>
@@ -53,7 +55,7 @@ export function useCancelBooking() {
   });
 }
 
-/** Si può ancora annullare: confermata e non ancora cominciata. */
+/** Vero se la prenotazione si può ancora annullare: è confermata e non è ancora cominciata. */
 export function isCancellable(booking: Booking, now: Date = new Date()): boolean {
   return booking.status === "Confirmed" && new Date(booking.startsAt) > now;
 }
