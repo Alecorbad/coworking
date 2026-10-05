@@ -10,6 +10,7 @@ import {
   toInstant,
   toTimeOnly,
   today,
+  zoneLabel,
 } from "./coworking-time";
 
 describe("toInstant", () => {
@@ -64,5 +65,12 @@ describe("formatDate", () => {
   it("uses the coworking time zone, not the browser one", () => {
     // 23:30 UTC del 31 agosto è già il 1° settembre a Roma (UTC+2 in estate).
     expect(formatDate("2026-08-31T23:30:00Z")).toBe("1 set 2026");
+  });
+});
+
+describe("zoneLabel", () => {
+  it("shows the offset of the day: +2 in summer, +1 in winter", () => {
+    expect(zoneLabel(new Date("2026-10-24T12:00:00Z"))).toBe("Ora di Roma · UTC+2");
+    expect(zoneLabel(new Date("2026-10-25T12:00:00Z"))).toBe("Ora di Roma · UTC+1");
   });
 });

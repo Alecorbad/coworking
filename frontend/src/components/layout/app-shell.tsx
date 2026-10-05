@@ -15,14 +15,17 @@ import Button from "@mui/material/Button";
 import Container from "@mui/material/Container";
 import Stack from "@mui/material/Stack";
 import Toolbar from "@mui/material/Toolbar";
+import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
 import EventNoteOutlinedIcon from "@mui/icons-material/EventNoteOutlined";
 import LogoutIcon from "@mui/icons-material/Logout";
 import MeetingRoomOutlinedIcon from "@mui/icons-material/MeetingRoomOutlined";
 import PeopleOutlinedIcon from "@mui/icons-material/PeopleOutlined";
+import ScheduleOutlinedIcon from "@mui/icons-material/ScheduleOutlined";
 import { useLogout, useMe } from "@/features/auth/api";
 import { ApiError } from "@/lib/api/api-error";
+import { TIME_ZONE, zoneLabel } from "@/lib/coworking-time";
 import { sizes } from "@/theme/tokens";
 import { ErrorState } from "@/components/ui/error-state";
 import { LoadingState } from "@/components/ui/loading-state";
@@ -82,6 +85,22 @@ export function AppShell({ children }: { children: ReactNode }) {
               );
             })}
           </Stack>
+          {/* Sempre visibile: ogni orario dell'app è nel fuso del coworking. */}
+          <Tooltip
+            title={`Tutti gli orari sono nel fuso ${TIME_ZONE}, quello del coworking, qualunque sia il fuso del computer.`}
+          >
+            <Stack
+              direction="row"
+              spacing={1}
+              sx={{ alignItems: "center", mr: 6, color: "text.secondary" }}
+            >
+              <ScheduleOutlinedIcon fontSize="small" />
+              {/* Pagina prerenderizzata: nel browser vale lo scarto di oggi, anche se diverso da quello della build. */}
+              <Typography variant="caption" suppressHydrationWarning>
+                {zoneLabel()}
+              </Typography>
+            </Stack>
+          </Tooltip>
           {me.isSuccess && (
             <Stack direction="row" spacing={3} sx={{ alignItems: "center" }}>
               <Typography variant="caption" sx={{ color: "text.secondary" }}>

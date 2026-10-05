@@ -21,6 +21,7 @@ import { useCustomers } from "@/features/customers/api";
 import { useRooms } from "@/features/rooms/api";
 import { errorMessage } from "@/lib/error-messages";
 import { TimeSelect } from "@/components/ui/time-select";
+import { TimeZoneNote } from "@/components/ui/time-zone-note";
 import { useCreateBooking } from "./api";
 import { readBookingForm } from "./booking-form";
 
@@ -94,6 +95,7 @@ export function BookingDialog({ draft, onClose }: { draft: BookingDraft; onClose
                 />
                 <TimeSelect name="end" label="Alle" defaultValue={draft.end ?? "10:00"} required />
               </Stack>
+              <TimeZoneNote />
               <TextField
                 name="attendees"
                 label="Partecipanti"

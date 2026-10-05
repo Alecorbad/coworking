@@ -23,6 +23,7 @@ import { buildGrid } from "@/features/bookings/grid";
 import { useRooms } from "@/features/rooms/api";
 import { daysRange, today } from "@/lib/coworking-time";
 import { TimeSelect } from "@/components/ui/time-select";
+import { TimeZoneNote } from "@/components/ui/time-zone-note";
 import { HALF_HOURS } from "@/lib/coworking-time";
 
 export default function AvailabilityPage() {
@@ -40,7 +41,7 @@ export default function AvailabilityPage() {
   const range = start && end && end > start ? { start, end } : undefined;
 
   const filters = (
-    <Stack direction="row" spacing={3} sx={{ mb: 4, flexWrap: "wrap", rowGap: 3 }}>
+    <Stack direction="row" spacing={3} sx={{ flexWrap: "wrap", rowGap: 3 }}>
       <TextField
         label="Giorno"
         type="date"
@@ -89,7 +90,10 @@ export default function AvailabilityPage() {
           </Button>
         }
       />
-      {filters}
+      <Stack spacing={2} sx={{ mb: 4 }}>
+        {filters}
+        <TimeZoneNote />
+      </Stack>
       {(rooms.isPending || bookings.isPending) && <LoadingState rows={5} />}
       {rooms.isError && <ErrorState error={rooms.error} onRetry={() => void rooms.refetch()} />}
       {bookings.isError && (

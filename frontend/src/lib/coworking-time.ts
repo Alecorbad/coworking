@@ -9,6 +9,14 @@ import { DateTime } from "luxon";
 /** Il coworking è a Roma: lo stesso valore di TimeZone nella configurazione del backend. */
 export const TIME_ZONE = "Europe/Rome";
 
+/**
+ * Il fuso del coworking per l'interfaccia, ad esempio "Ora di Roma · UTC+2". Lo scarto dipende
+ * dal giorno: +2 con l'ora legale, +1 d'inverno.
+ */
+export function zoneLabel(now: Date = new Date()): string {
+  return `Ora di Roma · ${DateTime.fromJSDate(now, { zone: TIME_ZONE }).toFormat("'UTC'Z")}`;
+}
+
 /** Il giorno di oggi nel fuso del coworking, "yyyy-MM-dd". */
 export function today(now: Date = new Date()): string {
   return DateTime.fromJSDate(now, { zone: TIME_ZONE }).toISODate()!;
