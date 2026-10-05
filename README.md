@@ -15,7 +15,7 @@ Clienti, sale e prenotazioni in un solo posto, senza sovrapposizioni.
 
 [Avvio rapido](#avvio-rapido) ·
 [Come è fatto](#come-è-fatto) ·
-[Gli otto nuclei](#gli-otto-nuclei) ·
+[I nove nuclei](#i-nove-nuclei) ·
 [Dove sta cosa](#dove-sta-cosa) ·
 [Scelte note](#scelte-e-limiti-noti) ·
 [Sviluppo](#sviluppo-locale) ·
@@ -179,7 +179,7 @@ Il testo mostrato all'utente nasce dal `code` del ProblemDetails, non dal messag
 
 ---
 
-## Gli otto nuclei
+## I nove nuclei
 
 Sono i punti da cui dipende il resto: capiti questi, ogni nuova funzione è una variazione. Classi,
 funzioni e componenti principali hanno un commento di documentazione (`///` in C#, `/** */` in
@@ -195,6 +195,7 @@ TypeScript) che dice in poche righe a cosa servono: l'editor lo mostra passandoc
 | 6 | [Stile](#6-stile) | un solo posto per colori, misure e componenti | `theme/` |
 | 7 | [Struttura e stati dell'interfaccia](#7-struttura-e-stati-dellinterfaccia) | ogni pagina ha caricamento, vuoto, errore e sessione persa | `app-shell.tsx`, `ui/` |
 | 8 | [Sale e clienti: dati condivisi](#8-sale-e-clienti-dati-condivisi) | nome ed email unici; con due modifiche contemporanee vince l'ultimo salvataggio | `Features/Rooms/`, `Features/Customers/` |
+| 9 | [Prenotazioni e disponibilità](#9-prenotazioni-e-disponibilità) | regole, annullamento e griglia senza sovrapposizioni | `Features/Bookings/`, `features/bookings/` |
 
 ### 1. Flusso degli errori
 
@@ -488,17 +489,26 @@ e verificare che usi il TypeScript del progetto («TypeScript: Select TypeScript
 
 ## Sviluppo locale
 
-Database in Docker, backend e frontend sulla macchina:
+Database in Docker, backend e frontend sulla macchina. Usa tre terminali, ciascuno aperto
+nella cartella del progetto, e lascia i processi attivi.
+
+**Terminale 1 — database**
 
 ```bash
 cp .env.example .env   # se non c'è già
 docker compose up db
+```
 
-# backend, su http://localhost:8080
+**Terminale 2 — backend, su http://localhost:8080**
+
+```bash
 cd backend
 dotnet run --project src/Coworking.Api
+```
 
-# frontend, su http://localhost:3000
+**Terminale 3 — frontend, su http://localhost:3000**
+
+```bash
 cd frontend
 npm ci
 npm run dev
@@ -530,13 +540,16 @@ cd ../frontend && npm run generate:api
 
 ### Test
 
+Dalla cartella del progetto, con PostgreSQL già avviato (`docker compose up db` in un altro
+terminale):
+
 ```bash
-# backend: i test di integrazione usano il PostgreSQL di docker compose (docker compose up db)
+# backend: unit test e integrazione su PostgreSQL
 cd backend
 dotnet test
 
 # frontend
-cd frontend
+cd ../frontend
 npm test
 npm run lint
 npm run format:check
