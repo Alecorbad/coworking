@@ -17,7 +17,6 @@ Clienti, sale e prenotazioni in un solo posto, senza sovrapposizioni.
 [Come è fatto](#come-è-fatto) ·
 [Gli otto nuclei](#gli-otto-nuclei) ·
 [Dove sta cosa](#dove-sta-cosa) ·
-[Studiare il progetto](#studiare-il-progetto) ·
 [Scelte note](#scelte-e-limiti-noti) ·
 [Sviluppo](#sviluppo-locale) ·
 [Problemi comuni](#problemi-comuni)
@@ -180,28 +179,11 @@ Il testo mostrato all'utente nasce dal `code` del ProblemDetails, non dal messag
 
 ---
 
-## Studiare il progetto
-
-Un capitolo alla volta: **schema → regola → codice → quiz → approfondimento**.
-
-1. **Orientati:** segui [il cammino di una richiesta](#il-cammino-di-una-richiesta), dal browser al database.
-2. **Capisci il comportamento:** leggi [errori](#1-flusso-degli-errori), [accesso](#3-accesso-e-sessione) e [pipeline](#4-pipeline-http), poi apri i file citati.
-3. **Collega i livelli:** passa al [contratto API](#5-contratto-dellapi), allo [stile](#6-stile) e agli [stati dell'interfaccia](#7-struttura-e-stati-dellinterfaccia).
-4. **Segui una feature con i dati:** [sale e clienti](#8-sale-e-clienti-dati-condivisi) mostrano unicità, modifiche concorrenti e moduli.
-5. **Mettiti alla prova:** spiega un caso concreto senza guardare il codice; usa il quiz locale se disponibile, poi approfondisci il punto che ti manca.
-
-- **Risorse vicino al concetto:** ogni capitolo offre letture o video con un obiettivo concreto. Parti dalla prima risorsa, apri le altre quando ti servono.
-- **Versioni:** le guide Microsoft puntano a ASP.NET Core 10 e PostgreSQL a 18; per gli altri strumenti confronta gli esempi con le versioni bloccate nei file di dipendenze.
-- **Lingua e formato:** le risorse indicate sono in inglese (EN); i video YouTube sono introduzioni, le guide ufficiali sono il riferimento per scrivere il codice.
-- **Consultazione locale:** documentazione, codice e schemi funzionano offline; aprire gli approfondimenti esterni richiede Internet.
-
----
-
 ## Gli otto nuclei
 
-Sono i punti da cui dipende il resto: capiti questi, ogni nuova funzione è una variazione. Ogni file
-centrale ha in testa una scheda di cinque righe (**Ruolo, Riceve, Produce, Regola, Vedi**) che dice la
-stessa cosa in piccolo.
+Sono i punti da cui dipende il resto: capiti questi, ogni nuova funzione è una variazione. Classi,
+funzioni e componenti principali hanno un commento di documentazione (`///` in C#, `/** */` in
+TypeScript) che dice in poche righe a cosa servono: l'editor lo mostra passandoci sopra.
 
 | # | Nucleo | In una riga | Dove |
 |:-:|---|---|---|
@@ -212,7 +194,7 @@ stessa cosa in piccolo.
 | 5 | [Contratto dell'API](#5-contratto-dellapi) | il backend descrive l'API, il frontend ne deriva i tipi | `openapi/`, `schema.d.ts` |
 | 6 | [Stile](#6-stile) | un solo posto per colori, misure e componenti | `theme/` |
 | 7 | [Struttura e stati dell'interfaccia](#7-struttura-e-stati-dellinterfaccia) | ogni pagina ha caricamento, vuoto, errore e sessione persa | `app-shell.tsx`, `ui/` |
-| 8 | [Sale e clienti: dati condivisi](#8-sale-e-clienti-dati-condivisi) | chi salva per secondo su dati vecchi riceve un 409, non sovrascrive | `Features/Rooms/`, `Features/Customers/` |
+| 8 | [Sale e clienti: dati condivisi](#8-sale-e-clienti-dati-condivisi) | nome ed email unici; con due modifiche contemporanee vince l'ultimo salvataggio | `Features/Rooms/`, `Features/Customers/` |
 
 ### 1. Flusso degli errori
 
@@ -459,8 +441,18 @@ esiste e che cosa costerebbe cambiarlo.
 | **Orari delle sale** | Apertura e chiusura a passi di mezz'ora, nello stesso giorno. | Sono le celle della griglia della disponibilità; niente sale aperte a cavallo di mezzanotte. | Orari liberi e una griglia che li arrotonda. |
 | **Moduli** | Nessuna libreria di form: i campi si leggono con `FormData`, i controlli del browser fermano gli errori evidenti e la validazione vera è dell'API. | Meno dipendenze, e una sola fonte delle regole. | Una libreria di form con uno schema condiviso per validare anche nel browser. |
 | **Elenchi** | Sale e clienti arrivano tutti in una risposta, senza paginazione né ricerca; le prenotazioni si leggono al massimo 31 giorni alla volta. | Un coworking ha poche sale e qualche centinaio di clienti. | Parametri di pagina e ricerca sulle route degli elenchi. |
-| **Fuso orario** | Un solo fuso, `Europe/Rome`: in configurazione per il backend, costante nel frontend. | Il coworking ha una sede sola. | Rileggere il fuso dal backend o salvarlo per sala. |
+| **Fuso orario** | Un solo fuso, `Europe/Rome`: in configurazione per il backend, costante nel frontend: i due valori vanno tenuti uguali a mano. | Il coworking ha una sede sola. | Rileggere il fuso dal backend o salvarlo per sala. |
+| **Prenotazioni** | Si creano, si leggono e si annullano; non si modificano. Una annullata resta nello storico e libera la fascia; una già cominciata non si annulla. | È ciò che la prova chiede: creazione, lettura e annullamento. | Una modifica che riapplichi tutte le regole, oppure annullare e ricreare. |
+| **Nome della sala** | È unico distinguendo le maiuscole: «Sala A» e «sala a» sono due sale. Gli spazi a inizio e fine vengono tolti. | Coerente con l'indice unico del database. | Un indice sul nome in minuscolo e il confronto senza maiuscole nel service. |
 | **Aggiornamento della griglia** | La griglia si rilegge ogni 30 secondi, e subito dopo un 409. | Più operatori vedono le prenotazioni degli altri senza ricaricare. | Notifiche in tempo reale (SignalR o Server-Sent Events). |
+
+### Interpretazioni della prova
+
+Dove la prova lascia spazio, ecco come è stata letta:
+
+- **Più operatori.** La prova parla di una receptionist, ma più postazioni sono realistiche: le prenotazioni non si sovrappongono mai, nemmeno con richieste simultanee, e la griglia si rilegge da sola.
+- **Intervalli semiaperti.** Una fascia è `[inizio, fine)`: 9:00–10:00 e 10:00–11:00 sulla stessa sala sono entrambe valide.
+- **Disponibilità letta dalle prenotazioni.** Non esiste un endpoint dedicato: la griglia combina le sale e le prenotazioni del giorno.
 
 ---
 
